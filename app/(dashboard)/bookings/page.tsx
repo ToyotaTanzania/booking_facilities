@@ -1,6 +1,9 @@
-import React from "react";
-
+import { BookingsList } from "./components";
 
 export default function BookingsPage() {
-  return <div>BookingsPage</div>;
+  return (
+    <div>
+      <BookingsList />
+    </div>
+  );
 }
