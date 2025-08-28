@@ -7,7 +7,7 @@ export const responsiblePersonRouter = createTRPCRouter({
       facility: z.number().optional(),
     }).optional())
     .query(async ({ ctx, input }) => {
-      let query = ctx.db
+      let query = ctx.supabase
         .from('responsible_person')
         .select('*, facility(*)');
 
@@ -24,10 +24,10 @@ export const responsiblePersonRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(z.number())
     .query(async ({ ctx, input }) => {
-      const { data, error } = await ctx.db
+      const { data, error } = await ctx.supabase
         .from('responsible_person')
         .select('*, facility(*)')
-        .eq('id', input)
+        .eq('facility', input)
         .single();
 
       if (error) throw error;
@@ -38,35 +38,60 @@ export const responsiblePersonRouter = createTRPCRouter({
     .input(z.object({
       user: z.string().uuid(),
       facility: z.number(),
+      name: z.string().nullable(),
       phone: z.string().nullable(),
       email: z.string().email().nullable(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const { data, error } = await ctx.db
+      // Check if facility already has a responsible person
+      const { data: existing } = await ctx.supabase
         .from('responsible_person')
-        .insert(input)
-        .select('*, facility(*)')
-        .single();
+        .select('*')
+        .eq('facility', input.facility)
+        .maybeSingle();
 
-      if (error) throw error;
-      return data;
+      let result;
+      if (existing) {
+        // Update existing record
+        const { data, error } = await ctx.supabase
+          .from('responsible_person')
+          .update(input)
+          .eq('facility', input.facility)
+          .select('*, facility(*)')
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      } else {
+        // Create new record
+        const { data, error } = await ctx.supabase
+          .from('responsible_person')
+          .insert(input)
+          .select('*, facility(*)')
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      }
+
+      return result;
     }),
 
   update: protectedProcedure
     .input(z.object({
-      id: z.number(),
+      facility: z.number(),
       data: z.object({
         user: z.string().uuid().optional(),
-        facility: z.number().optional(),
+        name: z.string().nullable().optional(),
         phone: z.string().nullable().optional(),
         email: z.string().email().nullable().optional(),
       }),
     }))
     .mutation(async ({ ctx, input }) => {
-      const { data, error } = await ctx.db
+      const { data, error } = await ctx.supabase
         .from('responsible_person')
         .update(input.data)
-        .eq('id', input.id)
+        .eq('facility', input.facility)
         .select('*, facility(*)')
         .single();
 
@@ -77,10 +102,10 @@ export const responsiblePersonRouter = createTRPCRouter({
   delete: protectedProcedure
     .input(z.number())
     .mutation(async ({ ctx, input }) => {
-      const { error } = await ctx.db
+      const { error } = await ctx.supabase
         .from('responsible_person')
         .delete()
-        .eq('id', input);
+        .eq('facility', input);
 
       if (error) throw error;
       return true;

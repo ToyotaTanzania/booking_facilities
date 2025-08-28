@@ -31,6 +31,7 @@ export const completeFacilityTypeSchema = facilityTypeSchema.merge(timestampSche
 export const responsiblePersonSchema = z.object({
   user: z.string().uuid(),
   facility: z.number(),
+  name: z.string().nullable(),
   phone: z.string().nullable(),
   email: z.string().email().nullable(),
 });

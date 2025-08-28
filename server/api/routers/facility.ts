@@ -23,8 +23,25 @@ export const facilityRouter = createTRPCRouter({
         `)
         .order("name");
 
+      const { data: responsiblePerson } = await ctx.supabase
+        .from("responsible_person")
+        .select(`*`);
+
+      const { data: schedules } = await ctx.supabase
+        .from("schedule")
+        .select(`*`);
+      
+      const { data: slots } = await ctx.supabase
+        .from("slots")
+        .select(`*`);
+
       if (error) throw error;
-      return data;
+      return data.map((facility) => ({
+        ...facility,
+        responsible_person: responsiblePerson?.find((person) => person.facility === facility.id) || null,
+        schedules: schedules?.find((schedule) => schedule.id === facility.schedule) || null,
+        slots: slots?.filter((slot) => slot.schedule === facility.schedule) || null,
+      }));
     }),
 
   getById: publicProcedure
@@ -41,7 +58,24 @@ export const facilityRouter = createTRPCRouter({
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Get responsible person and schedules for this facility
+      const { data: responsiblePerson } = await ctx.supabase
+        .from("responsible_person")
+        .select(`*`)
+        .eq("facility", input)
+        .maybeSingle();
+
+      const { data: schedules } = await ctx.supabase
+        .from("schedules")
+        .select(`id, name, start_time, end_time, facility`)
+        .eq("facility", input);
+
+      return {
+        ...data,
+        responsible_person: responsiblePerson || null,
+        schedules: schedules || null,
+      };
     }),
 
   create: publicProcedure
@@ -80,7 +114,13 @@ export const facilityRouter = createTRPCRouter({
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Return facility with empty responsible person and schedules
+      return {
+        ...data,
+        responsible_person: null,
+        schedules: null,
+      };
     }),
 
   update: publicProcedure
@@ -123,8 +163,68 @@ export const facilityRouter = createTRPCRouter({
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Get responsible person and schedules for this facility
+      const { data: responsiblePerson } = await ctx.supabase
+        .from("responsible_person")
+        .select(`*`)
+        .eq("facility", input.id)
+        .maybeSingle();
+
+      const { data: schedules } = await ctx.supabase
+        .from("schedules")
+        .select(`id, name, start_time, end_time, facility`)
+        .eq("facility", input.id);
+
+      return {
+        ...data,
+        responsible_person: responsiblePerson || null,
+        schedules: schedules || null,
+      };
     }),
+
+    updateSchedule: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      schedule: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { data: scheduleExists } = await ctx.supabase
+        .from("schedule")
+        .select("id")
+        .eq("id", input.schedule)
+        .single();
+
+      if (!scheduleExists) {
+        throw new Error("Selected schedule does not exist");
+      }
+
+      const { data: facilityExists } = await ctx.supabase
+        .from("facilities")
+        .select("id")
+        .eq("id", input.id)
+        .single();
+
+      if (!facilityExists) {
+        throw new Error("Selected facility does not exist");
+      }
+
+      const { data, error } = await ctx.supabase
+        .from("facilities")
+        .update({ schedule: input.schedule })
+        .eq("id", input.id)
+        .select(`
+          *,
+          building:buildings(*),
+          type:facility_type(*)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      return { success: true }
+    }),
+
 
   delete: publicProcedure
     .input(z.number())

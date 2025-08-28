@@ -29,7 +29,15 @@ export const userRouter = createTRPCRouter({
       if (error) {
         throw new Error(error.message);
       }
-      console.log(data)
+      return data;
+    }),
+
+    getAll: protectedProcedure
+    .query(async ({ ctx }) => {
+      const { data, error } = await ctx.supabase.from("profiles").select("*");
+      if (error) {
+        throw new Error(error.message);
+      }
       return data;
     }),
 

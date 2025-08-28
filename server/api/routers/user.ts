@@ -13,10 +13,7 @@ export const userRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       let query = ctx.supabase
         .from('profiles')
-        .select(`
-          *,
-          users!auth.users(*)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (input?.role) {
@@ -28,7 +25,7 @@ export const userRouter = createTRPCRouter({
       }
 
       if (input?.search) {
-        query = query.or(`name.ilike.%${input.search}%,email.ilike.%${input.search}%`);
+        query = query.or(`name.ilike.%${input.search}%`);
       }
 
       const { data, error } = await query;

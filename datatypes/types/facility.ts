@@ -30,6 +30,7 @@ export type FacilityTypeWithTimestamps = WithTimestamps<FacilityTypeData>;
 export interface ResponsiblePersonData {
   user: string;  // UUID from auth.users
   facility: number;  // References Facility.id
+  name: string | null;
   phone: string | null;
   email: string | null;
 }

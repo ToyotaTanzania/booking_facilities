@@ -9,7 +9,8 @@ export const scheduleRouter = createTRPCRouter({
         .from('schedule')
         .select(`
           *,
-          slots:slots!schedule(*)
+          slots:slots!schedule(*),
+          facility:facilities(name)
         `)
         .order('name');
 
@@ -17,7 +18,7 @@ export const scheduleRouter = createTRPCRouter({
       return data;
     }),
 
-  getById: publicProcedure
+  getScheduleWithSlotsById: publicProcedure
     .input(z.number())
     .query(async ({ ctx, input }) => {
       const { data, error } = await ctx.supabase
@@ -30,12 +31,46 @@ export const scheduleRouter = createTRPCRouter({
         .single();
 
       if (error) throw error;
+      return data;  
+    }),
+
+  getScheduleWithSlots: publicProcedure
+    .query(async ({ ctx }) => {
+      const { data, error } = await ctx.supabase
+        .from('schedule')
+        .select(`
+          *,
+          slots:slots!schedule(*)
+        `)
+        .order('name');
+
+      if (error) throw error;
+      return data;  
+    }),
+
+  getById: publicProcedure
+    .input(z.number())
+    .query(async ({ ctx, input }) => {
+      const { data, error } = await ctx.supabase
+        .from('schedule')
+        .select(`
+          *,
+          slots:slots!schedule(*),
+          facility:facilities(name)
+        `)
+        .eq('id', input)
+        .single();
+
+      if (error) throw error;
       return data;
     }),
 
   create: publicProcedure
     .input(z.object({
       name: z.string().min(1, "Name is required"),
+      start_time: z.string().optional(),
+      end_time: z.string().optional(),
+      facility: z.number().nullable().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const { data, error } = await ctx.supabase
@@ -99,6 +134,9 @@ export const scheduleRouter = createTRPCRouter({
     .input(z.object({
       id: z.number(),
       name: z.string().optional(),
+      start_time: z.string().optional(),
+      end_time: z.string().optional(),
+      facility: z.number().nullable().optional(),
       slots: z.array(z.object({
         start: z.string().min(1, "Start time is required").optional(),
         end: z.string().min(1, "End time is required").optional(),
@@ -106,10 +144,16 @@ export const scheduleRouter = createTRPCRouter({
       })).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (input.name) {
+      const updateData: any = {};
+      if (input.name) updateData.name = input.name;
+      if (input.start_time) updateData.start_time = input.start_time;
+      if (input.end_time) updateData.end_time = input.end_time;
+      if (input.facility !== undefined) updateData.facility = input.facility;
+
+      if (Object.keys(updateData).length > 0) {
         const { error } = await ctx.supabase
           .from('schedule')
-          .update({ name: input.name })
+          .update(updateData)
           .eq('id', input.id);
 
         if (error) throw error;
@@ -211,5 +255,21 @@ export const scheduleRouter = createTRPCRouter({
         message: "All slots for the schedule have been removed",
         scheduleId: input.id,
       };
+    }),
+
+  getByFacility: publicProcedure
+    .input(z.number())
+    .query(async ({ ctx, input }) => {
+      const { data, error } = await ctx.supabase
+        .from('schedule')
+        .select(`
+          *,
+          slots:slots!schedule(*)
+        `)
+        .eq('facility', input)
+        .order('name');
+
+      if (error) throw error;
+      return data;
     }),
 });
