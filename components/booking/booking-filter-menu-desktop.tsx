@@ -29,6 +29,7 @@ import {
   type BookingFilters,
 } from "@/store/booking";
 import { bookingFiltersFormInputSchema, type BookingFiltersFormInputData } from "@/store/booking-schema";
+import _ from "lodash";
 
 interface BookingFilterMenuDesktopProps {
   className?: string;
@@ -64,13 +65,8 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
   });
 
   const onSubmit = (data: BookingFiltersFormInputData) => {
-    // Only update the date filter since location, building, and facility are auto-applied
-    const newFilters = {
-      ...filters,
-      date: data.date,
-    };
-    setFilters(newFilters);
-    toast.success("Date filter applied successfully");
+    // All filters are now auto-applied, so we can just show a success message
+    toast.success("All filters applied successfully");
   };
 
   const handleReset = () => {
@@ -109,7 +105,7 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
       <div className="flex items-center gap-2 mb-4">
         <Filter className="h-5 w-5 text-muted-foreground" />
         <h3 className="font-medium">Booking Filters</h3>
-        <span className="text-xs text-muted-foreground">(Location, building & facility auto-apply)</span>
+        <span className="text-xs text-muted-foreground">(All filters auto-apply)</span>
         {hasActiveFilters && (
           <div className="h-2 w-2 rounded-full bg-blue-600" />
         )}
@@ -133,6 +129,16 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                       type="date"
                       {...field}
                       className="w-full"
+                      onChange={(e) => {
+                        const newDate = e.target.value;
+                        field.onChange(newDate);
+                        // Auto-apply date change
+                        const newFilters = {
+                          ...filters,
+                          date: newDate,
+                        };
+                        setFilters(newFilters);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -165,7 +171,7 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                     }}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="All Locations" />
                       </SelectTrigger>
                     </FormControl>
@@ -173,7 +179,7 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                       <SelectItem value="all">All Locations</SelectItem>
                       {locations?.map((location) => (
                         <SelectItem key={location.name} value={location.name}>
-                          {location.name}
+                          {_.capitalize(location.name)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -207,7 +213,7 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                     disabled={!filters.location}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder={
                           filters.location ? "All Buildings" : "Select location first"
                         } />
@@ -217,7 +223,7 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                       <SelectItem value="all">All Buildings</SelectItem>
                       {filteredBuildings.map((building) => (
                         <SelectItem key={building.name} value={building.name || ""}>
-                          {building.name}
+                          {_.capitalize(building.name)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -248,7 +254,7 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                     disabled={!filters.building}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full"> 
                         <SelectValue placeholder={
                           filters.building ? "All Facilities" : "Select building first"
                         } />
@@ -257,8 +263,8 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                     <SelectContent>
                       <SelectItem value="all">All Facilities</SelectItem>
                       {filteredFacilities.map((facility) => (
-                        <SelectItem key={facility.name} value={facility.name || ""}>
-                          {facility.name}
+                        <SelectItem key={facility.name} value={facility.id}>
+                          {_.capitalize(facility.name)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -273,7 +279,7 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button type="submit" className="gap-2">
               <Search className="h-4 w-4" />
-              Apply Date Filter
+              Done
             </Button>
             
             <div className="flex gap-2">

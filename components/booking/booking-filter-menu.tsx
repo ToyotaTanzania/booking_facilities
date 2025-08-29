@@ -85,13 +85,8 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
   };
 
   const onSubmit = (data: BookingFiltersFormInputData) => {
-    // Only update the date filter since location, building, and facility are auto-applied
-    const newFilters = {
-      ...filters,
-      date: data.date,
-    };
-    setFilters(newFilters);
-    toast.success("Date filter applied successfully");
+    // All filters are now auto-applied, so we can just close the modal
+    toast.success("All filters applied successfully");
     setOpen(false);
   };
 
@@ -136,48 +131,58 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
+      <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto px-4">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
             Booking Filters
           </SheetTitle>
           <SheetDescription>
-            Location, building, and facility filters are applied automatically. Only the date filter needs to be submitted.
+            All filters are applied automatically when changed. No need to click submit.
           </SheetDescription>
         </SheetHeader>
 
         <div className="mt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Date Filter */}
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      Date
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                             {/* Date Filter */}
+               <FormField
+                 control={form.control}
+                 name="date"
+                 render={({ field }) => (
+                   <FormItem>
+                     <FormLabel className="flex items-center gap-2">
+                       <Calendar className="h-4 w-4" />
+                       Date
+                     </FormLabel>
+                     <FormControl>
+                       <Input
+                         type="date"
+                         {...field}
+                         className="w-full"
+                         onChange={(e) => {
+                           const newDate = e.target.value;
+                           field.onChange(newDate);
+                           // Auto-apply date change
+                           const newFilters = {
+                             ...filters,
+                             date: newDate,
+                           };
+                           setFilters(newFilters);
+                         }}
+                       />
+                     </FormControl>
+                     <FormMessage />
+                   </FormItem>
+                 )}
+               />
 
                             {/* Location Filter */}
               <FormField
                 control={form.control}
                 name="location"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem >
                     <FormLabel>Location</FormLabel>
                     <Select
                       value={field.value || ""}
@@ -197,12 +202,12 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                       }}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select a location" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="all">All Locations</SelectItem>
+                      <SelectContent > 
+                        <SelectItem className="w-full" value="all">All Locations</SelectItem>
                         {locations?.map((location) => (
                           <SelectItem key={location.name} value={location.name}>
                             {_.capitalize(location.name)}
@@ -239,13 +244,13 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                       disabled={!filters.location}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder={
                             filters.location ? "Select a building" : "Select location first"
                           } />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent >
                         <SelectItem value="all">All Buildings</SelectItem>
                         {filteredBuildings.map((building) => (
                           <SelectItem key={building.name} value={building.name || ""}>
@@ -280,7 +285,7 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                       disabled={!filters.building}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder={
                             filters.building ? "Select a facility" : "Select building first"
                           } />
@@ -304,7 +309,7 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
               <div className="flex flex-col gap-3 pt-4">
                 <Button type="submit" className="w-full gap-2">
                   <Search className="h-4 w-4" />
-                  Apply Date Filter
+                  Done
                 </Button>
                 
                 <div className="flex gap-2">
