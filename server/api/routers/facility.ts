@@ -44,6 +44,77 @@ export const facilityRouter = createTRPCRouter({
       }));
     }),
 
+  getAllByDate: publicProcedure
+    .input(z.object({
+      date: z.date(),
+      facility: z.number().nullable(),
+      building: z.number().nullable(),
+      location: z.number().nullable(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { date, facility, building, location } = input;
+
+   
+      // const query = await ctx.supabase
+      //   .from("facilities")
+      //   .select(`
+      //     *,
+      //     building:buildings(*, location:locations(*)),
+      //     type:facility_type(*)
+      //   `)
+      //   .order("name");
+
+      // if (facility) {
+      //   query.eq("facility", facility);
+      // }
+
+      // if (building) {
+      //   query.eq("building", building);
+      // }
+
+      // if (location) {
+        //   query.eq("location", location);
+      // }
+
+      const { data, error } = await ctx.supabase
+        .from("facilities")
+        .select(`
+          *,
+          building:buildings(*, location:locations(*)),
+          type:facility_type(*)
+        `)
+        .order("name")
+
+      if (error) throw error;
+
+      const { data: responsiblePerson } = await ctx.supabase
+        .from("responsible_person")
+        .select(`*`);
+
+      const { data: schedules } = await ctx.supabase
+        .from("schedule")
+        .select(`*`);
+      
+      const { data: slots } = await ctx.supabase
+        .from("slots")
+        .select(`*`);
+
+      const { data: bookings } = await ctx.supabase
+        .from("bookings")
+        .select(`*`)
+        .eq("date", input.date.toISOString());
+      // Get responsible person and schedules for this facility
+      return data.map((facility) => ({
+        ...facility,
+        responsible_person: responsiblePerson?.find((person) => person.facility === facility.id),
+        schedules: schedules?.find((schedule) => schedule.id === facility.schedule),
+        slots: slots?.filter((slot) => slot.schedule === facility.schedule),
+        bookings: bookings?.filter((booking) => booking.facility === facility.id),
+      }));
+
+      
+    }),
+
   getById: publicProcedure
     .input(z.number())
     .query(async ({ ctx, input }) => {
@@ -51,7 +122,7 @@ export const facilityRouter = createTRPCRouter({
         .from("facilities")
         .select(`
           *,
-          building:buildings(*),
+          building:buildings(*, location:locations(*)),
           type:facility_type(*)
         `)
         .eq("id", input)

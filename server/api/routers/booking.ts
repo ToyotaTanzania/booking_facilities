@@ -2,227 +2,203 @@ import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '@/server'; 
 
 export const bookingRouter = createTRPCRouter({
-  list: protectedProcedure
-    .input(z.object({
-      facility: z.number().optional(),
-      date: z.string().optional(),
-      schedule: z.number().optional(),
-      user: z.string().uuid().optional(),
-    }).optional())
-    .query(async ({ ctx, input }) => {
-      let query = ctx.supabase
-        .from('bookings')
-        .select(`
-          *,
-          facility(*),
-          schedule(*),
-          slot:slots(*),
-          approved_by(*)
-        `);
 
-      if (input?.facility) {
-        query = query.eq('facility', input.facility);
+    create: protectedProcedure
+    .input(
+      z.object({
+        slots: z.array(z.number()),
+        date: z.string(),
+        schedule: z.number(),
+        facility: z.number(),
+      })
+    ).mutation( 
+      async ({ input, ctx }) => { 
+
+        const { slots, date, schedule, facility } = input
+
+        const { data, error } = await ctx.supabase
+        .from('bookings')
+        .insert(slots.map(slot => ({
+          slot: slot,
+          date: date,
+          schedule: schedule,
+          facility: facility,
+          user: ctx.session.supabase.sub,
+          description: ctx.session.user.email,
+          status: 'pending'
+        })))
+
+        if (error) {
+          console.log(error)
+          throw new Error(error.message)
+        }
+
+        return data
+      }
+    ),
+
+    getBookings: protectedProcedure.input(z.object({
+        date: z.string(),
+        facility: z.union([z.string(), z.number()]),
+    })).query(async ({ input, ctx }) => {
+        
+      const { data, error } = await ctx.supabase
+      .from('bookings')
+      .select('*')
+      .eq('facility', typeof input.facility === 'number' ? input.facility : +input.facility)
+      .eq('date', input.date)
+
+
+      if (error) {
+        throw new Error(error.message)
       }
 
-      if (input?.date) {
-        query = query.eq('date', input.date);
+      return data
+    }),
+
+
+    accept: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      comment: z.string().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { id, comment } = input
+
+      const { data, error } = await ctx.supabase
+      .from('bookings')
+      .update({ status: 'confirmed', 
+        approved_by: ctx.session.supabase.sub, 
+        approved_at: new Date().toISOString(), 
+        comment: comment 
+      })
+      .eq('id', id)
+
+      if (error) {
+        throw new Error(error.message)
       }
 
-      if (input?.schedule) {
-        query = query.eq('schedule', input.schedule);
-      }
-
-      if (input?.user) {
-        query = query.eq('user', input.user);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      return data;
+      return data
     }),
 
-  getById: protectedProcedure
+    reject: protectedProcedure
     .input(z.object({
-      schedule: z.number(),
-      slot: z.number(),
-      facility: z.number(),
-      date: z.string(),
-      user: z.string().uuid(),
-    }))
-    .query(async ({ ctx, input }) => {
+      id: z.number(),
+      comment: z.string().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { id, comment } = input
+
       const { data, error } = await ctx.supabase
-        .from('bookings')
-        .select(`
-          *,
-          facility(*),
-          schedule(*),
-          slot:slots(*),
-          approved_by(*)
-        `)
-        .eq('schedule', input.schedule)
-        .eq('slot', input.slot)
-        .eq('facility', input.facility)
-        .eq('date', input.date)
-        .eq('user', input.user)
-        .single();
+      .from('bookings')
+      .update({ status: 'rejected', approved_by: ctx.session.supabase.sub, approved_at: new Date().toISOString(), comment: comment })
+      .eq('id', id)
 
-      if (error) throw error;
-      return data;
-    }),
+    if (error) {
+        throw new Error(error.message)
+    }
 
-  create: protectedProcedure
-    .input(z.object({
-      schedule: z.number(),
-      slot: z.number(),
-      facility: z.number(),
-      date: z.string(),
-      status: z.string().nullable(),
-      description: z.string().nullable(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const { data, error } = await ctx.supabase
-        .from('bookings')
-        .insert({
-          ...input,
-          user: ctx.session.user?.id,
-        })
-        .select(`
-          *,
-          facility(*),
-          schedule(*),
-          slot:slots(*),
-          approved_by(*)
-        `)
-        .single();
+    return data
+  }),
 
-      if (error) throw error;
-      return data;
-    }),
+  changeUser: protectedProcedure
+  .input(z.object({
+    id: z.number(),
+    user: z.string(),
+    comment: z.string().optional(),
+  })).mutation(async ({ input, ctx }) => {
+    const { id, user, comment } = input
 
-  update: protectedProcedure
-    .input(z.object({
-      schedule: z.number(),
-      slot: z.number(),
-      facility: z.number(),
-      date: z.string(),
-      user: z.string().uuid(),
-      data: z.object({
-        status: z.string().nullable().optional(),
-        description: z.string().nullable().optional(),
-        approved_by: z.string().uuid().nullable().optional(),
-        approved_at: z.string().nullable().optional(),
-      }),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const { data, error } = await ctx.supabase
-        .from('bookings')
-        .update(input.data)
-        .eq('schedule', input.schedule)
-        .eq('slot', input.slot)
-        .eq('facility', input.facility)
-        .eq('date', input.date)
-        .eq('user', input.user)
-        .select(`
-          *,
-          facility(*),
-          schedule(*),
-          slot:slots(*),
-          approved_by(*)
-        `)
-        .single();
+  const { data, error } = await ctx.supabase
+    .from('bookings')
+    .update({ status: 'confirmed',
+      approved_by: ctx.session.supabase.sub, 
+      approved_at: new Date().toISOString(), 
+      comment: comment, 
+      user: user 
+    })
+    .eq('id', id)
+    .eq('user', user)
 
-      if (error) throw error;
-      return data;
-    }),
+    if (error) {
+      throw new Error(error.message)
+    }
 
-  delete: protectedProcedure
-    .input(z.object({
-      schedule: z.number(),
-      slot: z.number(),
-      facility: z.number(),
-      date: z.string(),
-      user: z.string().uuid(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const { error } = await ctx.supabase
-        .from('bookings')
-        .delete()
-        .eq('schedule', input.schedule)
-        .eq('slot', input.slot)
-        .eq('facility', input.facility)
-        .eq('date', input.date)
-        .eq('user', input.user);
+    return data
+  }),
 
-      if (error) throw error;
-      return true;
-    }),
+  cancel: protectedProcedure
+  .input(z.object({
+    id: z.number(),
+    comment: z.string().optional(),
+  })).mutation(async ({ input, ctx }) => {
+    const { id, date, comment } = input
 
-  approve: protectedProcedure
-    .input(z.object({
-      schedule: z.number(),
-      slot: z.number(),
-      facility: z.number(),
-      date: z.string(),
-      user: z.string().uuid(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const { data, error } = await ctx.supabase
-        .from('bookings')
-        .update({
-          status: 'approved',
-          approved_by: ctx.session.user?.id,
-          approved_at: new Date().toISOString(),
-        })
-        .eq('schedule', input.schedule)
-        .eq('slot', input.slot)
-        .eq('facility', input.facility)
-        .eq('date', input.date)
-        .eq('user', input.user)
-        .select(`
-          *,
-          facility(*),
-          schedule(*),
-          slot:slots(*),
-          approved_by(*)
-        `)
-        .single();
+  const { data, error } = await ctx.supabase
+    .from('bookings')
+    .update({ status: 'cancelled',
+      approved_by: ctx.session.supabase.sub, 
+      approved_at: new Date().toISOString(), 
+      comment: comment, 
+    })
+    .eq('id', id)
 
-      if (error) throw error;
-      return data;
-    }),
+    if (error) {
+      throw new Error(error.message)
+    }
 
-  reject: protectedProcedure
-    .input(z.object({
-      schedule: z.number(),
-      slot: z.number(),
-      facility: z.number(),
-      date: z.string(),
-      user: z.string().uuid(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const { data, error } = await ctx.supabase
-        .from('bookings')
-        .update({
-          status: 'rejected',
-          approved_by: ctx.session.user.id,
-          approved_at: new Date().toISOString(),
-        })
-        .eq('schedule', input.schedule)
-        .eq('slot', input.slot)
-        .eq('facility', input.facility)
-        .eq('date', input.date)
-        .eq('user', input.user)
-        .select(`
-          *,
-          facility(*),
-          schedule(*),
-          slot:slots(*),
-          approved_by(*)
-        `)
-        .single();
+    return data
+  }),
 
-      if (error) throw error;
-      return data;
-    }),
+
+  changeDate: protectedProcedure
+  .input(z.object({
+    id: z.number(),
+    date: z.string(),
+    comment: z.string().optional(),
+  })).mutation(async ({ input, ctx }) => {
+    const { id, date, comment } = input
+
+  const { data, error } = await ctx.supabase
+    .from('bookings')
+    .update({ status: 'pending',
+      approved_by: ctx.session.supabase.sub, 
+      approved_at: new Date().toISOString(), 
+      comment: comment, 
+      date: date 
+    })
+    .eq('id', id)
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return data
+  }),
+
+
+  rescheduleAndConfirm: protectedProcedure
+  .input(z.object({
+    id: z.number(),
+    date: z.string(),
+    slot: z.number(),
+    comment: z.string().optional(),
+  })).mutation(async ({ input, ctx }) => {
+    const { id, date, slot, comment } = input
+
+  const { data, error } = await ctx.supabase
+    .from('bookings')
+    .update({ status: 'confirmed',
+      approved_by: ctx.session.supabase.sub, 
+      approved_at: new Date().toISOString(), 
+      comment: comment, 
+      date: date,
+      slot: slot
+    })
+    .eq('id', id)
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return data
+  }),
 });

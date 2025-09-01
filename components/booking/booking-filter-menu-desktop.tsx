@@ -46,20 +46,20 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
 
   // Filter buildings by selected location
   const filteredBuildings = buildings?.filter(
-    (building) => !filters.location || building.location === filters.location
+    (building) => !filters.location || building.location.id === filters.location.id
   ) || [];
 
   // Filter facilities by selected building
   const filteredFacilities = facilities?.filter(
-    (facility) => !filters.building || facility.building.name === filters.building
+    (facility) => !filters.building || facility.building.id === filters.building.id
   ) || [];
 
   const form = useForm<BookingFiltersFormInputData>({
     resolver: zodResolver(bookingFiltersFormInputSchema),
     defaultValues: {
       date: filters.date,
-      location: filters.location || "all",
-      building: filters.building || "all",
+      location: filters.location?.name || "all",
+      building: filters.building?.name || "all",
       facility: filters.facility || "all",
     },
   });
@@ -73,9 +73,15 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
     resetFilters();
     form.reset({
       date: new Date().toISOString().split('T')[0],
-      location: "all",
-      building: "all",
-      facility: "all",
+      location: {
+        id: 0,
+        name: "",
+      },
+      building: null,
+      facility: {
+        id: 0,
+        name: "",
+      },
     });
     toast.success("Filters reset successfully");
   };
@@ -83,22 +89,31 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
   const handleClearFilters = () => {
     const clearedFilters = {
       date: new Date().toISOString().split('T')[0],
-      location: null,
+      location: {
+        id: 0,
+        name: "",
+      },
       building: null,
       facility: null,
     };
     setFilters(clearedFilters);
     form.reset({
       date: clearedFilters.date,
-      location: "all",
-      building: "all",
+      location: {
+        id: 0,
+        name: "",
+      },
+      building: {
+        id: 0,
+        name: "",
+      },
       facility: "all",
     });
     toast.success("Filters cleared successfully");
   };
 
   // Check if any filters are applied (excluding date)
-  const hasActiveFilters = filters.location || filters.building || filters.facility;
+  const hasActiveFilters = filters.location?.id || filters.building?.id || filters.facility?.id;
 
   return (
     <div className={`bg-card border rounded-lg p-4 ${className}`}>
@@ -160,13 +175,19 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                       // Auto-apply location change
                       const newFilters = {
                         ...filters,
-                        location: value === "all" ? null : value,
+                        location: value === "all" ? null : {
+                          id: 0,
+                          name: value,
+                        },
                         building: null, // Reset building when location changes
                         facility: null, // Reset facility when location changes
                       };
                       setFilters(newFilters);
                       // Update form to reflect the reset values
-                      form.setValue("building", "all");
+                      form.setValue("building", {
+                        id: 0,
+                        name: "",
+                      });
                       form.setValue("facility", "all");
                     }}
                   >
@@ -203,12 +224,18 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                       // Auto-apply building change
                       const newFilters = {
                         ...filters,
-                        building: value === "all" ? null : value,
+                        building: value === "all" ? null : {
+                          id: 0,
+                          name: value,
+                        },
                         facility: null, // Reset facility when building changes
                       };
                       setFilters(newFilters);
                       // Update form to reflect the reset value
-                      form.setValue("facility", "all");
+                      form.setValue("facility", {
+                        id: 0,
+                        name: "",
+                      });
                     }}
                     disabled={!filters.location}
                   >
@@ -247,7 +274,10 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                       // Auto-apply facility change
                       const newFilters = {
                         ...filters,
-                        facility: value === "all" ? null : value,
+                        facility: value === "all" ? null : {
+                          id: 0,
+                          name: value,
+                        },
                       };
                       setFilters(newFilters);
                     }}

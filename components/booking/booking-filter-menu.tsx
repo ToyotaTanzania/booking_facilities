@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAtom } from "jotai";
@@ -56,21 +56,21 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
 
   // Filter buildings by selected location
   const filteredBuildings = buildings?.filter(
-    (building) => !filters.location || building.location === filters.location
+    (building) => !filters.location || building.location.id === filters.location.id
   ) || [];
 
   // Filter facilities by selected building
   const filteredFacilities = facilities?.filter(
-    (facility) => !filters.building || facility.building.name === filters.building
+    (facility) => !filters.building || facility.building.id === filters.building.id
   ) || [];
 
   const form = useForm<BookingFiltersFormInputData>({
     resolver: zodResolver(bookingFiltersFormInputSchema),
     defaultValues: {
       date: filters.date,
-      location: filters.location || "all",
-      building: filters.building || "all",
-      facility: filters.facility || "all",
+      location: filters.location?.name ?? "all",
+      building: filters.building?.name ?? "all",
+      facility: filters.facility?.name ?? "all",
     },
   });
 
@@ -78,11 +78,16 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
   const updateFormValues = (newFilters: BookingFilters) => {
     form.reset({
       date: newFilters.date,
-      location: newFilters.location || "all",
-      building: newFilters.building || "all",
-      facility: newFilters.facility || "all",
+      location: newFilters.location?.name ?? "all",
+      building: newFilters.building?.name ?? "all",
+      facility: newFilters.facility?.name ?? "all",
     });
   };
+
+  // Update form values when filters change externally
+  useEffect(() => {
+    updateFormValues(filters);
+  }, [filters]);
 
   const onSubmit = (data: BookingFiltersFormInputData) => {
     // All filters are now auto-applied, so we can just close the modal
@@ -114,7 +119,7 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
   };
 
   // Check if any filters are applied (excluding date)
-  const hasActiveFilters = filters.location || filters.building || filters.facility;
+  const hasActiveFilters = filters.location?.id || filters.building?.id || filters.facility?.id;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -145,44 +150,44 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
         <div className="mt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                             {/* Date Filter */}
-               <FormField
-                 control={form.control}
-                 name="date"
-                 render={({ field }) => (
-                   <FormItem>
-                     <FormLabel className="flex items-center gap-2">
-                       <Calendar className="h-4 w-4" />
-                       Date
-                     </FormLabel>
-                     <FormControl>
-                       <Input
-                         type="date"
-                         {...field}
-                         className="w-full"
-                         onChange={(e) => {
-                           const newDate = e.target.value;
-                           field.onChange(newDate);
-                           // Auto-apply date change
-                           const newFilters = {
-                             ...filters,
-                             date: newDate,
-                           };
-                           setFilters(newFilters);
-                         }}
-                       />
-                     </FormControl>
-                     <FormMessage />
-                   </FormItem>
-                 )}
-               />
+              {/* Date Filter */}
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Date
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        {...field}
+                        className="w-full"
+                        onChange={(e) => {
+                          const newDate = e.target.value;
+                          field.onChange(newDate);
+                          // Auto-apply date change
+                          const newFilters = {
+                            ...filters,
+                            date: newDate,
+                          };
+                          setFilters(newFilters);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                            {/* Location Filter */}
+              {/* Location Filter */}
               <FormField
                 control={form.control}
                 name="location"
                 render={({ field }) => (
-                  <FormItem >
+                  <FormItem>
                     <FormLabel>Location</FormLabel>
                     <Select
                       value={field.value || ""}
@@ -191,7 +196,10 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                         // Auto-apply location change
                         const newFilters = {
                           ...filters,
-                          location: value === "all" ? null : value,
+                          location: value === "all" ? null : {
+                            id: locations?.find(loc => loc.name === value)?.id || 0,
+                            name: value,
+                          },
                           building: null, // Reset building when location changes
                           facility: null, // Reset facility when location changes
                         };
@@ -206,8 +214,8 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                           <SelectValue placeholder="Select a location" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent > 
-                        <SelectItem className="w-full" value="all">All Locations</SelectItem>
+                      <SelectContent>
+                        <SelectItem value="all">All Locations</SelectItem>
                         {locations?.map((location) => (
                           <SelectItem key={location.name} value={location.name}>
                             {_.capitalize(location.name)}
@@ -220,7 +228,7 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                 )}
               />
 
-                            {/* Building Filter */}
+              {/* Building Filter */}
               <FormField
                 control={form.control}
                 name="building"
@@ -234,23 +242,26 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                         // Auto-apply building change
                         const newFilters = {
                           ...filters,
-                          building: value === "all" ? null : value,
+                          building: value === "all" ? null : {
+                            id: filteredBuildings.find(building => building.name === value)?.id || 0,
+                            name: value,
+                          },
                           facility: null, // Reset facility when building changes
                         };
                         setFilters(newFilters);
                         // Update form to reflect the reset value
                         form.setValue("facility", "all");
                       }}
-                      disabled={!filters.location}
+                      disabled={!filters.location?.id}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder={
-                            filters.location ? "Select a building" : "Select location first"
+                            filters.location?.id ? "Select a building" : "Select location first"
                           } />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent >
+                      <SelectContent>
                         <SelectItem value="all">All Buildings</SelectItem>
                         {filteredBuildings.map((building) => (
                           <SelectItem key={building.name} value={building.name || ""}>
@@ -264,7 +275,7 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                 )}
               />
 
-                            {/* Facility Filter */}
+              {/* Facility Filter */}
               <FormField
                 control={form.control}
                 name="facility"
@@ -278,16 +289,19 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                         // Auto-apply facility change
                         const newFilters = {
                           ...filters,
-                          facility: value === "all" ? null : value,
+                          facility: value === "all" ? null : {
+                            id: filteredFacilities.find(facility => facility.name === value)?.id || 0,
+                            name: value,
+                          },
                         };
                         setFilters(newFilters);
                       }}
-                      disabled={!filters.building}
+                      disabled={!filters.building?.id}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder={
-                            filters.building ? "Select a facility" : "Select building first"
+                            filters.building?.id ? "Select a facility" : "Select building first"
                           } />
                         </SelectTrigger>
                       </FormControl>
@@ -342,13 +356,13 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
             <h4 className="font-medium text-sm mb-2">Active Filters:</h4>
             <div className="space-y-1 text-sm text-muted-foreground">
               {filters.location && (
-                <div>Location: {filters.location}</div>
+                <div>Location: {filters.location.name}</div>
               )}
               {filters.building && (
-                <div>Building: {filters.building}</div>
+                <div>Building: {filters.building.name}</div>
               )}
               {filters.facility && (
-                <div>Facility: {filters.facility}</div>
+                <div>Facility: {filters.facility.name}</div>
               )}
             </div>
           </div>

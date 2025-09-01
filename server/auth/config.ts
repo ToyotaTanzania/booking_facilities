@@ -42,6 +42,7 @@ export const authConfig = {
           name: profile.data.name,
           unit: profile.data.unit,
           role: profile.data.role,
+          user: data?.user,
           division: profile.data.division,
           segment: profile.data.segment,
           cluster: profile.data.cluster, 
@@ -58,6 +59,8 @@ export const authConfig = {
       // Initial sign-in: persist Supabase tokens into the JWT
       if (user) {
         token.sub = user.id;
+        token.id = user.id;
+        token.user = user;
         token.supabaseAccessToken = (user as any).supabaseAccessToken;
         token.supabaseRefreshToken = (user as any).supabaseRefreshToken;
         // We don't know exact exp here; we'll rely on refresh on demand.

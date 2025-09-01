@@ -2,14 +2,23 @@ import { atom } from 'jotai';
 
 export interface BookingFilters {
   date: string;
-  location: string | null;
-  building: string | null;
-  facility: string | null;
+  location: { 
+    id: number;
+    name: string;
+  } | null;
+  building: {
+    id: number;
+    name: string;
+  } | null;
+  facility: {
+    id: number;
+    name: string;
+  } | null;
 }
 
 // Default filters with current date
 export const defaultBookingFilters: BookingFilters = {
-  date: new Date().toISOString().split('T')[0], // Current date in YYYY-MM-DD format
+  date: new Date().toISOString().split('T')[0] ?? "2025-01-01", // Current date in YYYY-MM-DD format
   location: null,
   building: null,
   facility: null,
@@ -29,7 +38,7 @@ export const bookingDateAtom = atom(
 
 export const bookingLocationAtom = atom(
   (get) => get(bookingFiltersAtom).location,
-  (get, set, newLocation: string | null) => {
+  (get, set, newLocation: { id: number; name: string; } | null) => {
     const current = get(bookingFiltersAtom);
     set(bookingFiltersAtom, { 
       ...current, 
@@ -42,19 +51,19 @@ export const bookingLocationAtom = atom(
 
 export const bookingBuildingAtom = atom(
   (get) => get(bookingFiltersAtom).building,
-  (get, set, newBuilding: string | null) => {
+  (get, set, newBuilding: { id: number; name: string; } | null) => {
     const current = get(bookingFiltersAtom);
     set(bookingFiltersAtom, { 
       ...current, 
       building: newBuilding,
-      facility: null  // Reset facility when building changes
+      facility: null,  // Reset facility when building changes
     });
   }
 );
 
 export const bookingFacilityAtom = atom(
   (get) => get(bookingFiltersAtom).facility,
-  (get, set, newFacility: string | null) => {
+  (get, set, newFacility: { id: number; name: string; }  | null) => {
     const current = get(bookingFiltersAtom);
     set(bookingFiltersAtom, { ...current, facility: newFacility });
   }

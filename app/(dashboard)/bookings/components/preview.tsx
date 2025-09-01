@@ -2,21 +2,16 @@
 
 import { useAtom } from "jotai"
 import { bookingFiltersAtom } from "@/store/booking"
-import { api } from "@/trpc/react"
+import { BookingForm } from "./booking"
+import { format } from "date-fns"
 
 export const BookingPreview = () => {
-  const [filters] = useAtom(bookingFiltersAtom)
+  const [{date}] = useAtom(bookingFiltersAtom)
 
-
-  const { data: bookings } = api.booking.getBookings.useQuery({
-    ...filters,
-  })
-  
   return (
     <div>
-      <h1>Booking Preview</h1>
-      <p>Filters: {JSON.stringify(filters)}</p>
-      <p>Bookings: {JSON.stringify(bookings)}</p>
+      <h1 className="text-2xl font-bold mb-4">Booking {date ? format(new Date(date), "EEEE, MMMM d, yyyy") : ''} </h1>
+      <BookingForm /> 
     </div>
   )
 }
