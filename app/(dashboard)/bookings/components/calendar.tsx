@@ -145,9 +145,16 @@ export function DailyCalendar({
   // Get status badge
   const getStatusBadge = (status: "available" | "pending" | "rejected") => {
     switch (status) {
-      case "available":
+      case "confirmed":
         return (
           <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Confirmed
+          </Badge>
+        );
+      case "available":
+        return (
+          <Badge variant="secondary" className="bg-grey-100 text-gray-800 border-gray-200">
             <CheckCircle className="h-3 w-3 mr-1" />
             Available
           </Badge>
@@ -227,11 +234,11 @@ export function DailyCalendar({
               <TableHead className="bg-muted/50 py-2 font-medium">Time Slot</TableHead>
               <TableHead className="py-2">Status</TableHead>
               <TableHead className="py-2">Booked By</TableHead>
-              <TableHead className="py-2">Size</TableHead>
+              <TableHead className="py-2"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {slots.map((slot: ScheduleSlot) => {
+            {slots?.map((slot: ScheduleSlot) => {
               const status = getSlotStatus(slot);
               const canSelect = canSelectSlot(slot);
               const isSelected = selectedSlots.has(slot.id);
@@ -269,15 +276,12 @@ export function DailyCalendar({
                   </TableCell>
                   <TableCell className="py-2">
                     { 
-                     room?.responsible_person && session.supabase.sub === room?.responsible_person?.user ? (
+                     room?.responsible_person && session.supabase.sub === room?.responsible_person?.user && status.toLowerCase()==='pending' ? (
                         <Approve
                           booking={getSlotBooking(slot)}
                         />
-                     ) : (
-                      <Badge variant="outline">{"unkonw"}</Badge>
-                     )
+                     ) : null
                     }
-                    <Badge variant="outline">{slot.size}</Badge>
                   </TableCell>
                 </TableRow>
               );
