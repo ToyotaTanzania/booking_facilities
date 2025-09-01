@@ -34,6 +34,8 @@ import {
 import _ from "lodash";
 import { useSession } from "next-auth/react";
 import { Approve } from "./approve";
+import { api } from "@/trpc/react";
+import { toast } from "sonner";
 
 interface Booking {
   id: number;
@@ -76,6 +78,19 @@ export function DailyCalendar({
     return <div>Loading...</div>;
   }
 
+  const utils = api.useUtils();
+  const { mutate: createBooking } = api.booking.create.useMutation({ 
+    onSuccess: () => {
+      toast.success("Booking created successfully");
+      utils.facility.getAllByDate.invalidate();
+      setSelectedSlots(new Set());
+      setShowConfirmModal(false);
+    },
+    onError: () => {
+      toast.error("Failed to create booking");
+    },
+  });
+
   // Get booking status for a slot
   const getSlotStatus = (slot: ScheduleSlot): "available" | "pending" | "rejected" => {
     const booking = bookings.find(b => b.slot === slot.id);
@@ -105,12 +120,16 @@ export function DailyCalendar({
 
   // Handle booking confirmation
   const handleConfirmBooking = async () => {
+    console.log("handleConfirmBooking", selectedSlots)
     try {
-      const selectedSlotsData = getSelectedSlotsData() as ScheduleSlot[];
-      
-      // TODO: Implement API call to save booking
-      console.log("Booking slots:", selectedSlotsData);
-      
+      const selectedSlotsData = getSelectedSlotsData();
+
+      createBooking({
+        slots: selectedSlotsData.map(slot => slot.id),
+        date: date.toISOString(),
+        facility: room?.id as number,
+        schedule: room?.schedule as number,
+      });
       // Reset selection and close modal
       setSelectedSlots(new Set());
       setShowConfirmModal(false);
@@ -164,11 +183,11 @@ export function DailyCalendar({
           <Breadcrumb className="border-b pb-4 flex justify-center mt-4">
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="#">{_.upperCase(location ?? "Location")}</BreadcrumbLink>
+                <BreadcrumbLink href="#">{_.upperCase(location?.name ?? "Location")}</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator> · </BreadcrumbSeparator>
               <BreadcrumbItem>
-                <BreadcrumbLink href="#">{_.upperCase(building ?? "Building")}</BreadcrumbLink>
+                <BreadcrumbLink href="#">{_.upperCase(building?.name ?? "Building")}</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator> · </BreadcrumbSeparator>
               <BreadcrumbItem>
@@ -286,7 +305,7 @@ export function DailyCalendar({
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <HomeIcon className="h-4 w-4" />
-                <span>Location: {location} • {building} • {room}</span>
+                <span>Location: {location?.name} • {building?.name} • {room?.name}</span>
               </div>
               
               <div className="border-t pt-3">

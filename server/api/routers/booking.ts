@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { date, z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '@/server'; 
 
 export const bookingRouter = createTRPCRouter({
@@ -59,10 +59,13 @@ export const bookingRouter = createTRPCRouter({
 
     accept: protectedProcedure
     .input(z.object({
-      id: z.number(),
+      slot: z.number(),
+      facility: z.number(),
+      date: z.string(),
+      schedule: z.number(),
       comment: z.string().optional(),
     })).mutation(async ({ input, ctx }) => {
-      const { id, comment } = input
+      const { facility, slot, date, comment } = input
 
       const { data, error } = await ctx.supabase
       .from('bookings')
@@ -71,7 +74,9 @@ export const bookingRouter = createTRPCRouter({
         approved_at: new Date().toISOString(), 
         comment: comment 
       })
-      .eq('id', id)
+      .eq('facility', facility)
+      .eq('date', new Date(date).toISOString())
+      .eq('slot', slot)
 
       if (error) {
         throw new Error(error.message)
@@ -82,15 +87,24 @@ export const bookingRouter = createTRPCRouter({
 
     reject: protectedProcedure
     .input(z.object({
-      id: z.number(),
+      slot: z.number(),
+      facility: z.number(),
+      date: z.string(),
       comment: z.string().optional(),
     })).mutation(async ({ input, ctx }) => {
-      const { id, comment } = input
+      const { facility, slot, date, comment } = input
 
       const { data, error } = await ctx.supabase
       .from('bookings')
-      .update({ status: 'rejected', approved_by: ctx.session.supabase.sub, approved_at: new Date().toISOString(), comment: comment })
-      .eq('id', id)
+      .update({ 
+        status: 'rejected', 
+        approved_by: ctx.session.supabase.sub, 
+        approved_at: new Date().toISOString(), 
+        comment: comment 
+      })
+      .eq('facility', facility)
+      .eq('date', new Date(date).toISOString())
+      .eq('slot', slot)
 
     if (error) {
         throw new Error(error.message)
@@ -101,22 +115,23 @@ export const bookingRouter = createTRPCRouter({
 
   changeUser: protectedProcedure
   .input(z.object({
-    id: z.number(),
-    user: z.string(),
+    slot: z.number(),
+    facility: z.number(),
+    date: z.string(),
+    user: z.string(), 
     comment: z.string().optional(),
   })).mutation(async ({ input, ctx }) => {
-    const { id, user, comment } = input
+    const { facility, date, slot, user, comment } = input
 
   const { data, error } = await ctx.supabase
     .from('bookings')
-    .update({ status: 'confirmed',
-      approved_by: ctx.session.supabase.sub, 
-      approved_at: new Date().toISOString(), 
-      comment: comment, 
-      user: user 
-    })
-    .eq('id', id)
-    .eq('user', user)
+    .update({
+      user: user,
+      comment: comment
+     })
+    .eq('facility', facility)
+    .eq('date', new Date(date).toISOString())
+    .eq('slot', slot)
 
     if (error) {
       throw new Error(error.message)

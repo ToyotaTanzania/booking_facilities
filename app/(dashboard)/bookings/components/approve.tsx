@@ -27,8 +27,6 @@ export const Approve = ({
   booking,
 }: ApproveProps) => {
 
-
-  console.log(booking)
   if(!booking) return null;
   
   const [action, setAction] = useState<'approve' | 'reject' | 'change-user'>('approve');
@@ -37,8 +35,39 @@ export const Approve = ({
   const [isLoading, setIsLoading] = useState(false);
   const [ open, setOpen ] = useState(false);
 
-  
   const { data: users } = api.auth.users.getAll.useQuery();
+  const utils = api.useUtils();
+
+  const { mutate: approveBooking } = api.booking.accept.useMutation({ 
+    onSuccess: async () => {
+      toast.success('Booking approved successfully');
+      await utils.facility.getAllByDate.invalidate();
+      setOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  const { mutate: rejectBooking } = api.booking.reject.useMutation({ 
+    onSuccess: async () => {
+      toast.success('Booking rejected successfully');
+      await utils.facility.getAllByDate.invalidate();
+      setOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  const { mutate: changeUserBooking } = api.booking.changeUser.useMutation({ 
+    onSuccess: async () => {
+      toast.success('Booking user changed successfully');
+      await utils.facility.getAllByDate.invalidate();
+      setOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
 
   const handleSubmit = async () => {
     if (action === 'reject' && !reason.trim()) {
@@ -53,28 +82,37 @@ export const Approve = ({
 
     setIsLoading(true);
 
-    
+
     try {
-      // switch (action) {
-      //   case 'approve':
-      //     if (onApprove) {
-      //       await handleApprove(booking, reason.trim() || undefined);
-      //       toast.success('Booking approved successfully');
-      //     }
-      //     break;
-      //   case 'reject':
-      //     if (handleReject) {
-      //       await handleReject(booking, reason.trim());
-      //       toast.success('Booking rejected successfully');
-      //     }
-      //     break;
-      //   case 'change-user':
-      //     if (handleChangeUser) {
-      //       await onChangeUser(booking, newUserId, reason.trim());
-      //       toast.success('User changed successfully');
-      //     }
-      //     break;
-      // }
+      switch (action) {
+        case 'approve':
+          console.log('Approving booking:', { booking, reason });
+          approveBooking({
+            slot: booking.slot as number,
+            facility: booking.facility as number,
+            date: booking.date as string,
+            schedule: booking.schedule as number,
+            comment: reason.trim() || undefined,
+          });
+          break;
+        case 'reject':
+          rejectBooking({
+            slot: booking.slot as number,
+            facility: booking.facility as number,
+            date: booking.date as string,
+            comment: reason.trim(),
+          });
+          break;
+        case 'change-user':
+          changeUserBooking({
+            slot: booking.slot as number,
+            facility: booking.facility as number,
+            date: booking.date as string,
+            user: newUserId,
+            comment: reason.trim(),
+          });
+          break;
+      }
       
       // Reset form and close modal
       setAction('approve');
@@ -89,25 +127,12 @@ export const Approve = ({
     }
   };
 
-  const { mutate: updateBooking } = api.booking.update.useMutation();
-
+ 
   const handleCancel = () => {
     setAction('approve');
     setReason('');
     setNewUserId('');
     setOpen(false);
-  };
-
-  const handleApprove = async (booking: Booking, reason?: string) => {
-    console.log('Approving booking:', { booking, reason });
-  };
-
-  const handleReject = async (booking: Booking, reason: string) => {
-    console.log('Rejecting booking:', { booking, reason });
-  };
-
-  const handleChangeUser = async (booking: Booking, newUserId: string, reason: string) => {
-    console.log('Changing user for booking:', { booking, newUserId, reason });
   };
 
   return (
@@ -131,19 +156,19 @@ export const Approve = ({
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                <span>Date: {format(new Date(booking.date), "EEEE, MMMM d, yyyy")}</span>
+                <span>Date: {format(new Date(booking.date as string), "EEEE, MMMM d, yyyy")}</span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4" />
-                <span>Slot ID: {booking.slot}</span>
+                <span>Slot ID: {booking.slot as number}</span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <HomeIcon className="h-4 w-4" />
-                <span>Facility ID: {booking.facility}</span>
+                <span>Facility ID: {booking.facility as number}</span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <User className="h-4 w-4" />
-                <span>User ID: {booking.description ?? 'Unknown'}</span>
+                <span>User ID: {booking.description as string ?? 'Unknown'}</span>
               </div>
             </div>
             
@@ -151,14 +176,14 @@ export const Approve = ({
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">Status:</span>
               <Badge 
-                variant={booking.status === 'pending' ? 'secondary' : 'default'}
+                variant={booking.status as string === 'pending' ? 'secondary' : 'default'}
                 className={
-                  booking.status === 'pending' 
+                  booking.status as string === 'pending' 
                     ? 'bg-yellow-100 text-yellow-800 border-yellow-200' 
                     : ''
                 }
               >
-                {booking.status === 'pending' ? 'Pending Approval' : booking.status}
+                {booking.status as string === 'pending' ? 'Pending Approval' : booking.status as string}
               </Badge>
             </div>
           </div>
@@ -204,7 +229,7 @@ export const Approve = ({
                 </SelectTrigger>
                 <SelectContent>
                   {users?.map((user) => (
-                    <SelectItem key={user.userid} value={user.userid}>
+                    <SelectItem key={user.userid as string} value={user.userid as string || '' }>
                       {user.name} ({user.email})
                     </SelectItem>
                   ))}
