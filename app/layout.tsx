@@ -10,8 +10,8 @@ import { env } from "@/env";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Shadboard",
-    default: "Shadboard",
+    template: "%s | Meeting Hub",
+    default: "Meeting Hub - Karimjee",
   },
   description: "",
   metadataBase: new URL(env.NEXT_PUBLIC_BASE_URL as string),
