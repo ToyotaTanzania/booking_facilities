@@ -10,6 +10,9 @@ import { AddEventDialog } from "@/calendar/components/dialogs/add-event-dialog";
 
 import type { IEvent } from "@/calendar/interfaces";
 import type { TCalendarView } from "@/calendar/types";
+import { BuildingSelect } from "./building-select";
+import { LocationSelect } from "./location-select";
+import { FacilitySelect } from "./facility-select";
 
 interface IProps {
   view: TCalendarView;
@@ -26,7 +29,7 @@ export function CalendarHeader({ view, events }: IProps) {
 
       <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between">
         <div className="flex w-full items-center gap-1.5">
-          <div className="inline-flex first:rounded-r-none last:rounded-l-none [&:not(:first-child):not(:last-child)]:rounded-none">
+          {/* <div className="inline-flex first:rounded-r-none last:rounded-l-none [&:not(:first-child):not(:last-child)]:rounded-none">
             <Button asChild aria-label="View by day" size="icon" variant={view === "day" ? "default" : "outline"} className="rounded-r-none [&_svg]:size-5">
               <Link href="/day-view">
                 <List strokeWidth={1.8} />
@@ -80,9 +83,12 @@ export function CalendarHeader({ view, events }: IProps) {
                 <CalendarRange strokeWidth={1.8} />
               </Link>
             </Button>
-          </div>
+          </div> */}
 
-          <UserSelect />
+          {/* <UserSelect /> */}
+          <LocationSelect />
+          <BuildingSelect />
+          <FacilitySelect />
         </div>
 
         <AddEventDialog>

@@ -1,5 +1,6 @@
 import { date, z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '@/server'; 
+import { endOfYear, startOfYear } from 'date-fns';
 
 export const bookingRouter = createTRPCRouter({
 
@@ -49,6 +50,24 @@ export const bookingRouter = createTRPCRouter({
       .eq('date', input.date)
 
 
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      return data
+    }),
+
+
+    getCalendarBookings: protectedProcedure.query(async ({ ctx }) => {
+      
+      const { data, error } = await ctx.supabase
+      .from('bookings')
+      .select('*, profiles(*)')
+      // .between('date', [startOfYear(new Date(input.date)).toISOString(), endOfYear(new Date(input.date)).toISOString()])
+      .lt('date', endOfYear(new Date()).toISOString())
+      .gt('date', startOfYear(new Date()).toISOString())
+      .eq('status', 'confirmed')
+      
       if (error) {
         throw new Error(error.message)
       }
