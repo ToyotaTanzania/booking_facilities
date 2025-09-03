@@ -62,11 +62,11 @@ export const bookingRouter = createTRPCRouter({
       
       const { data, error } = await ctx.supabase
       .from('bookings')
-      .select('*, profiles(*)')
+      .select('*, user:profiles(*), slot:slots(*), facility:facilities(*)')
       // .between('date', [startOfYear(new Date(input.date)).toISOString(), endOfYear(new Date(input.date)).toISOString()])
       .lt('date', endOfYear(new Date()).toISOString())
       .gt('date', startOfYear(new Date()).toISOString())
-      .eq('status', 'confirmed')
+      // .eq('status', 'confirmed')
       
       if (error) {
         throw new Error(error.message)

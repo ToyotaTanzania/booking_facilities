@@ -57,7 +57,8 @@ export function ClientContainer({ view }: IProps) {
 
         const isInSelectedWeek = eventStartDate <= weekEnd && eventEndDate >= weekStart;
         const isUserMatch = selectedUserId === "all" || event.user.id === selectedUserId;
-        return isInSelectedWeek && isUserMatch;
+        // return isInSelectedWeek && isUserMatch;
+        return isInSelectedWeek;
       }
 
       if (view === "day") {
@@ -96,7 +97,10 @@ export function ClientContainer({ view }: IProps) {
       <DndProviderWrapper>
         {view === "day" && <CalendarDayView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
         {view === "month" && <CalendarMonthView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
-        {view === "week" && <CalendarWeekView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
+        {view === "week" && <CalendarWeekView 
+        singleDayEvents={singleDayEvents}
+         multiDayEvents={multiDayEvents}
+          />}
         {view === "year" && <CalendarYearView allEvents={eventStartDates} />}
         {view === "agenda" && <CalendarAgendaView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
       </DndProviderWrapper>

@@ -8,6 +8,15 @@ import {
 } from "@/server";
 
 export const userRouter = createTRPCRouter({
+
+  getUsers: publicProcedure.query(async ({ ctx }) => {
+    const { data, error } = await ctx.supabase.from("profiles").select("*");
+    if (error) {
+      throw new Error(error.message);
+    }
+    return data;
+  }),
+
   hello: protectedProcedure.query(async ({ input, ctx }) => {
     const { data } = await ctx.supabase.from("users").select("*");
     return {
