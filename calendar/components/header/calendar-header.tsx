@@ -86,9 +86,9 @@ export function CalendarHeader({ view, events }: IProps) {
           </div> */}
 
           {/* <UserSelect /> */}
-          <LocationSelect />
+          {/* <LocationSelect />
           <BuildingSelect />
-          <FacilitySelect />
+          <FacilitySelect /> */}
         </div>
 
         <AddEventDialog>
