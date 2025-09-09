@@ -1,26 +1,56 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { useCalendar } from "@/calendar/contexts/calendar-context";
-
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { TimeInput } from "@/components/ui/time-input";
-import { SingleDayPicker } from "@/components/ui/single-day-picker";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Form, FormField, FormLabel, FormItem, FormControl, FormMessage } from "@/components/ui/form";
-import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogHeader, DialogClose, DialogContent, DialogTrigger, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormLabel,
+  FormItem,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Dialog,
+  DialogHeader,
+  DialogClose,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 import { eventSchema } from "@/calendar/schemas";
 
 import type { TimeValue } from "react-aria-components";
 import type { TEventFormData } from "@/calendar/schemas";
+import { api } from "@/trpc/react";
+import { bookingFiltersAtom } from "@/store/booking";
+import { useAtom } from "jotai/react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format, isValid, parse } from "date-fns";
+import { useId } from "react";
+
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import { fi, id } from "date-fns/locale";
+import _ from "lodash";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface IProps {
   children: React.ReactNode;
@@ -30,31 +60,64 @@ interface IProps {
 
 export function AddEventDialog({ children, startDate, startTime }: IProps) {
   const { users } = useCalendar();
+  const [date, setDate] = useState<Date>();
+  const [month, setMonth] = useState<Date>(new Date());
+  const [inputValue, setInputValue] = useState("");
+  const [isDateOpen, setIsDateOpen] = useState(false);
+  const [ schedule, setSchedule ] = useState<string>('');
+
+  const [ slots, setSlots ] = useState<Array<{ start: string; end: string, id: number | string }>>([]);
 
   const { isOpen, onClose, onToggle } = useDisclosure();
+  const { data: allFacilities } = api.facility.getAll.useQuery();
+  const { data: allSlots } = api.slots.getAll.useQuery();
+
+  console.log("allSlots", allSlots)
+
+  // const { data: allFacilities, isLoading } = api.facility.getAllByDate.useQuery({
+  //   date: date ? new Date(date) : new Date(),
+  //   facility: facility?.id ?? null,
+  //   building: building?.id ?? null,
+  //   location: location?.id   ?? null,
+  // },{
+  //   enabled: !!date,
+  //   refetchOnMount: true,
+  //   refetchOnWindowFocus: true,
+  //   refetchOnReconnect: true,
+  //   refetchInterval: 1000 * 60 * 5,
+  //   refetchIntervalInBackground: true,
+  // })
+
+  const facilities = _.groupBy(
+    allFacilities,
+    (fac) => fac.building.name + "," + fac.building.location,
+  );
+  
+
 
   const form = useForm<TEventFormData>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      startDate: typeof startDate !== "undefined" ? startDate : undefined,
-      startTime: typeof startTime !== "undefined" ? startTime : undefined,
+      room: "",
+      slots: [],
+      date: typeof startDate !== "undefined" ? startDate : undefined,
     },
   });
 
   const onSubmit = (_values: TEventFormData) => {
     // TO DO: Create use-add-event hook
+
+    console.log(_values)
     onClose();
     form.reset();
   };
 
   useEffect(() => {
     form.reset({
-      startDate,
-      startTime,
+      date,
     });
-  }, [startDate, startTime, form.reset]);
+  }, [date, form.reset]);
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onToggle}>
@@ -62,42 +125,85 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add New Event</DialogTitle>
+          <DialogTitle>New Booking</DialogTitle>
           <DialogDescription>
-            This is just and example of how to use the form. In a real application, you would call the API to create the event
+            This is just and example of how to use the form. In a real
+            application, you would call the API to create the booking
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form id="event-form" onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+          <form
+            id="event-form"
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="grid gap-4 py-4"
+          >
             <FormField
               control={form.control}
-              name="user"
-              render={({ field, fieldState }) => (
+              name="date"
+              render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Responsible</FormLabel>
-                  <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger data-invalid={fieldState.invalid}>
-                        <SelectValue placeholder="Select an option" />
-                      </SelectTrigger>
+                  <FormLabel htmlFor="date">Date</FormLabel>
+                  <FormControl className="w-full">
+                    <DatePicker
+                      onChange={field.onChange}
+                      value={field.value}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                      <SelectContent>
-                        {users.map(user => (
-                          <SelectItem key={user.id} value={user.id} className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <Avatar key={user.id} className="size-6">
-                                <AvatarImage src={user.picturePath ?? undefined} alt={user.name} />
-                                <AvatarFallback className="text-xxs">{user.name[0]}</AvatarFallback>
-                              </Avatar>
-
-                              <p className="truncate">{user.name}</p>
+            <FormField
+              control={form.control}
+              name="room"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="Location">Room</FormLabel>
+                  <Select 
+                    onValueChange={
+                      (value: string) => {  
+                        console.log(value)
+                        field.onChange(value);
+                        setSchedule(value.split(',')[1] ?? "");
+                        form.setValue('slots', []);
+                      }
+                    } 
+                    value={field.value}
+                  >
+                    <SelectTrigger className="w-full **:data-desc:hidden">
+                      <SelectValue placeholder="Choose a plan" />
+                    </SelectTrigger>
+                    <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
+                      {_.filter(facilities, (f) => f.length > 0).map(
+                        (group, index) => (
+                          <div key={index}>
+                            <div className="text-muted-foreground px-2 py-1 text-sm font-medium">
+                              {_.startCase(group[0].building.name)},{" "}
+                              {_.startCase(group[0].building.location)}
                             </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
+                            {group.map((facility) => (
+                              <SelectItem
+                                key={facility.id.toString() + index}
+                                value={`${facility.id.toString()},${facility.schedule}`}
+                                onSelect={field.onChange}
+                                className="cursor-pointer"
+                              >
+                                {_.startCase(facility.name)}{" "}
+                                <span
+                                  className="text-muted-foreground mt-1 block text-xs"
+                                  data-desc
+                                >
+                                  Capacity: {facility.capacity}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </div>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -105,195 +211,55 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
 
             <FormField
               control={form.control}
-              name="title"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel htmlFor="title">Title</FormLabel>
-
+              name="slots"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Time Slots</FormLabel>
                   <FormControl>
-                    <Input id="title" placeholder="Enter a title" data-invalid={fieldState.invalid} {...field} />
-                  </FormControl>
+                    <div className="grid grid-cols-2 gap-2 bg-gray-100 p-4 rounded-md max-h-60 overflow-y-auto">
+                      { schedule && allSlots?.[schedule]?.length ? allSlots[schedule].map((slot) => {
+                        const value = String(slot?.id);
+                        const inputId = `slot-${value}`;
+                        const isChecked = Array.isArray(field.value) && field.value.includes(value);
 
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex items-start gap-2">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field, fieldState }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel htmlFor="startDate">Start Date</FormLabel>
-
-                    <FormControl>
-                      <SingleDayPicker
-                        id="startDate"
-                        value={field.value}
-                        onSelect={date => field.onChange(date as Date)}
-                        placeholder="Select a date"
-                        data-invalid={fieldState.invalid}
-                      />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="startTime"
-                render={({ field, fieldState }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Start Time</FormLabel>
-
-                    <FormControl>
-                      <TimeInput value={field.value as TimeValue} onChange={field.onChange} hourCycle={12} data-invalid={fieldState.invalid} />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="flex items-start gap-2">
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field, fieldState }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>End Date</FormLabel>
-                    <FormControl>
-                      <SingleDayPicker
-                        value={field.value}
-                        onSelect={date => field.onChange(date as Date)}
-                        placeholder="Select a date"
-                        data-invalid={fieldState.invalid}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="endTime"
-                render={({ field, fieldState }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>End Time</FormLabel>
-
-                    <FormControl>
-                      <TimeInput value={field.value as TimeValue} onChange={field.onChange} hourCycle={12} data-invalid={fieldState.invalid} />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="color"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel>Color</FormLabel>
-                  <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger data-invalid={fieldState.invalid}>
-                        <SelectValue placeholder="Select an option" />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        <SelectItem value="blue">
-                          <div className="flex items-center gap-2">
-                            <div className="size-3.5 rounded-full bg-blue-600" />
-                            Blue
+                        return (
+                          <div className="flex items-center gap-2 cursor-pointer p-2 rounded-sm " key={value}>
+                            <Checkbox
+                              id={inputId}
+                              className="border-black cursor-pointer"
+                              checked={isChecked}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  field.onChange([...(field.value ?? []), value]);
+                                } else {
+                                  field.onChange((field.value ?? []).filter((v: string) => v !== value));
+                                }
+                              }}
+                            />
+                            <Label htmlFor={inputId}>{ slot.start } - { slot.end } </Label>
                           </div>
-                        </SelectItem>
-
-                        <SelectItem value="green">
-                          <div className="flex items-center gap-2">
-                            <div className="size-3.5 rounded-full bg-green-600" />
-                            Green
-                          </div>
-                        </SelectItem>
-
-                        <SelectItem value="red">
-                          <div className="flex items-center gap-2">
-                            <div className="size-3.5 rounded-full bg-red-600" />
-                            Red
-                          </div>
-                        </SelectItem>
-
-                        <SelectItem value="yellow">
-                          <div className="flex items-center gap-2">
-                            <div className="size-3.5 rounded-full bg-yellow-600" />
-                            Yellow
-                          </div>
-                        </SelectItem>
-
-                        <SelectItem value="purple">
-                          <div className="flex items-center gap-2">
-                            <div className="size-3.5 rounded-full bg-purple-600" />
-                            Purple
-                          </div>
-                        </SelectItem>
-
-                        <SelectItem value="orange">
-                          <div className="flex items-center gap-2">
-                            <div className="size-3.5 rounded-full bg-orange-600" />
-                            Orange
-                          </div>
-                        </SelectItem>
-
-                        <SelectItem value="gray">
-                          <div className="flex items-center gap-2">
-                            <div className="size-3.5 rounded-full bg-neutral-600" />
-                            Gray
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                        );
+                      }) : <p className="text-sm text-gray-500">Please select a room to see available time slots.</p> }
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
 
-                  <FormControl>
-                    <Textarea {...field} value={field.value} data-invalid={fieldState.invalid} />
-                  </FormControl>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <Button form="event-form" type="submit">
+                Confirm Booking
+              </Button>
+            </DialogFooter>
           </form>
         </Form>
-
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancel
-            </Button>
-          </DialogClose>
-
-          <Button form="event-form" type="submit">
-            Create Event
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

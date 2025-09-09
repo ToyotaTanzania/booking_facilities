@@ -21,7 +21,7 @@ interface IProps {
 }
 
 export function CalendarWeekView({ singleDayEvents, multiDayEvents }: IProps) {
-  const { selectedDate, workingHours, visibleHours } = useCalendar();
+  const { selectedDate, workingHours, visibleHours, users, events } = useCalendar();
 
   const { hours, earliestEventHour, latestEventHour } = getVisibleHours(visibleHours, singleDayEvents);
 
@@ -45,14 +45,14 @@ export function CalendarWeekView({ singleDayEvents, multiDayEvents }: IProps) {
             <div className="grid flex-1 grid-cols-7 divide-x border-l">
               {weekDays.map((day, index) => (
                 <span key={index} className="py-2 text-center text-xs font-medium text-muted-foreground">
-                  {format(day, "EE")} <span className="ml-1 font-semibold text-foreground">{format(day, "d")}</span>
+                  {format(day, "EEEE")} <span className="ml-1 font-semibold text-foreground">{format(day, "dd")}</span>
                 </span>
               ))}
             </div>
           </div>
         </div>
 
-        <ScrollArea className="h-[736px]" type="always">
+        <ScrollArea className="h-full" type="always">
           <div className="flex overflow-hidden">
             {/* Hours column */}
             <div className="relative w-18">

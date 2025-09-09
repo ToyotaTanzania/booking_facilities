@@ -44,6 +44,28 @@ export const facilityRouter = createTRPCRouter({
       }));
     }),
 
+  getAll: publicProcedure
+    .query(async ({ ctx }) => {
+      const { data, error } = await ctx.supabase
+        .from("facilities")
+        .select(`*,building:buildings(*)`);
+
+      const { data: responsiblePerson } = await ctx.supabase
+        .from("responsible_person")
+        .select(`*`);
+      
+      const { data: slots } = await ctx.supabase
+        .from("slots")
+        .select(`*`); 
+
+      if (error) throw error;
+      return data.map((facility) => ({
+        ...facility,
+        responsible_person: responsiblePerson?.find((person) => person.facility === facility.id) || null,
+        slots: slots?.filter((slot) => slot.schedule === facility.schedule) || null,
+      }));
+    }),
+
   getAllByDate: publicProcedure
     .input(z.object({
       date: z.date(),

@@ -8,10 +8,10 @@ import { useCalendar } from "@/calendar/contexts/calendar-context";
 import { DndProviderWrapper } from "@/calendar/components/dnd/dnd-provider";
 
 import { CalendarHeader } from "@/calendar/components/header/calendar-header";
-import { CalendarYearView } from "@/calendar/components/year-view/calendar-year-view";
-import { CalendarMonthView } from "@/calendar/components/month-view/calendar-month-view";
+// import { CalendarYearView } from "@/calendar/components/year-view/calendar-year-view";
+// import { CalendarMonthView } from "@/calendar/components/month-view/calendar-month-view";
 import { CalendarAgendaView } from "@/calendar/components/agenda-view/calendar-agenda-view";
-import { CalendarDayView } from "@/calendar/components/week-and-day-view/calendar-day-view";
+// import { CalendarDayView } from "@/calendar/components/week-and-day-view/calendar-day-view";
 import { CalendarWeekView } from "@/calendar/components/week-and-day-view/calendar-week-view";
 
 import type { TCalendarView } from "@/calendar/types";
@@ -25,6 +25,7 @@ export function ClientContainer({ view }: IProps) {
 
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
+      
       const eventStartDate = parseISO(event.startDate);
       const eventEndDate = parseISO(event.endDate);
 
@@ -91,17 +92,17 @@ export function ClientContainer({ view }: IProps) {
   }, [filteredEvents]);
 
   return (
-    <div className="overflow-hidden rounded-xl border">
+    <div className="h-full w-full ">
       <CalendarHeader view={view} events={filteredEvents} />
 
       <DndProviderWrapper>
-        {view === "day" && <CalendarDayView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
-        {view === "month" && <CalendarMonthView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
+        {/* {view === "day" && <CalendarDayView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
+        {view === "month" && <CalendarMonthView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />} */}
         {view === "week" && <CalendarWeekView 
         singleDayEvents={singleDayEvents}
          multiDayEvents={multiDayEvents}
           />}
-        {view === "year" && <CalendarYearView allEvents={eventStartDates} />}
+        {/* {view === "year" && <CalendarYearView allEvents={eventStartDates} />} */}
         {view === "agenda" && <CalendarAgendaView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
       </DndProviderWrapper>
     </div>

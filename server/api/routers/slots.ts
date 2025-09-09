@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '@/server';
 import { format, parse } from 'date-fns';
+import _ from 'lodash';
 
 export const slotsRouter = createTRPCRouter({
   list: publicProcedure
@@ -20,6 +21,27 @@ export const slotsRouter = createTRPCRouter({
 
       if (error) throw error;
       return data;
+    }),
+
+    getAll: publicProcedure
+    .input(z.object({
+      schedule: z.number().optional(),
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      let query = ctx.supabase
+        .from('slots')
+        .select('*');
+
+      if (input?.schedule) {
+        query = query.eq('schedule', input.schedule);
+      }
+
+      const { data, error } = await query.order('start_time');
+
+      const groupedData = _.groupBy(data, 'schedule');
+
+      if (error) throw error;
+      return groupedData;
     }),
 
   getById: publicProcedure
