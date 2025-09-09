@@ -250,12 +250,12 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="outline">
-                  Cancel
+                  Cancel 
                 </Button>
               </DialogClose>
 
               <Button form="event-form" type="submit">
-                Confirm Booking
+                Confirm 
               </Button>
             </DialogFooter>
           </form>
