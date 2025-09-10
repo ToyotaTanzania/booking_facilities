@@ -5,6 +5,7 @@ import { CalendarProvider } from "@/calendar/contexts/calendar-context";
 
 import { api } from "@/trpc/react";
 import type { IEvent } from "@/calendar/interfaces";
+import {useMedia} from 'react-use';
 
 interface BookingData {
   id: number;
@@ -36,6 +37,7 @@ interface UserData {
 }
 
 export function BookingsCalendar() {
+  const state = useMedia('(max-width: 640px)');
   const { data: bookings, isLoading: bookingsLoading } =
     api.booking.getCalendarBookings.useQuery();
   const { data: users, isLoading: usersLoading } = api.user.getUsers.useQuery();
@@ -103,7 +105,7 @@ export function BookingsCalendar() {
       }
       events={events}
     >
-      <ClientContainer view="week" />
+      <ClientContainer view={state ? "agenda" : "week" } />
     </CalendarProvider>
   );
 }

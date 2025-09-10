@@ -103,7 +103,12 @@ export function ClientContainer({ view }: IProps) {
          multiDayEvents={multiDayEvents}
           />}
         {/* {view === "year" && <CalendarYearView allEvents={eventStartDates} />} */}
-        {view === "agenda" && <CalendarAgendaView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
+        {view === "agenda" && 
+          <CalendarAgendaView 
+              singleDayEvents={singleDayEvents}
+              multiDayEvents={multiDayEvents}
+          />
+        }
       </DndProviderWrapper>
     </div>
   );

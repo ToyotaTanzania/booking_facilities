@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AgendaDayGroup } from "@/calendar/components/agenda-view/agenda-day-group";
 
 import type { IEvent } from "@/calendar/interfaces";
+import _ from "lodash";
 
 interface IProps {
   singleDayEvents: IEvent[];
@@ -15,12 +16,13 @@ interface IProps {
 }
 
 export function CalendarAgendaView({ singleDayEvents, multiDayEvents }: IProps) {
-  const { selectedDate } = useCalendar();
+  const { selectedDate, events } = useCalendar();
+
 
   const eventsByDay = useMemo(() => {
     const allDates = new Map<string, { date: Date; events: IEvent[]; multiDayEvents: IEvent[] }>();
 
-    singleDayEvents.forEach(event => {
+    events.forEach(event => {
       const eventDate = parseISO(event.startDate);
       if (!isSameMonth(eventDate, selectedDate)) return;
 
@@ -57,14 +59,19 @@ export function CalendarAgendaView({ singleDayEvents, multiDayEvents }: IProps) 
     return Array.from(allDates.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [singleDayEvents, multiDayEvents, selectedDate]);
 
-  const hasAnyEvents = singleDayEvents.length > 0 || multiDayEvents.length > 0;
+  const hasAnyEvents = events.length > 0 ||  singleDayEvents.length > 0 || multiDayEvents.length > 0;
 
   return (
     <div className="h-[800px]">
       <ScrollArea className="h-full" type="always">
         <div className="space-y-6 p-4">
-          {eventsByDay.map(dayGroup => (
-            <AgendaDayGroup key={format(dayGroup.date, "yyyy-MM-dd")} date={dayGroup.date} events={dayGroup.events} multiDayEvents={dayGroup.multiDayEvents} />
+          {_.reverse(eventsByDay).map(dayGroup => (
+            <AgendaDayGroup 
+               key={format(dayGroup.date, "yyyy-MM-dd")}
+               date={dayGroup.date} 
+               events={dayGroup.events} 
+               multiDayEvents={dayGroup.multiDayEvents} 
+            />
           ))}
 
           {!hasAnyEvents && (
