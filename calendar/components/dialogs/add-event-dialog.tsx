@@ -49,8 +49,9 @@ import {
 } from "@/components/ui/select";
 
 import { fi, id } from "date-fns/locale";
-import _ from "lodash";
+import _, { create, set } from "lodash";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 
 interface IProps {
   children: React.ReactNode;
@@ -58,23 +59,30 @@ interface IProps {
   startTime?: { hour: number; minute: number };
 }
 
-export function AddEventDialog({ children, startDate, startTime }: IProps) {
-  const { users } = useCalendar();
-  const [date, setDate] = useState<Date>();
-  const [month, setMonth] = useState<Date>(new Date());
-  const [inputValue, setInputValue] = useState("");
-  const [isDateOpen, setIsDateOpen] = useState(false);
-  const [ schedule, setSchedule ] = useState<string>('');
-
-  const [ slots, setSlots ] = useState<Array<{ start: string; end: string, id: number | string }>>([]);
+export function AddEventDialog({ children, startDate }: IProps) {
+  const { users, events, setLocalEvents } = useCalendar();
+  const [schedule, setSchedule] = useState<string>("");
 
   const { isOpen, onClose, onToggle } = useDisclosure();
   const { data: allFacilities } = api.facility.getAll.useQuery();
   const { data: allSlots } = api.slots.getAll.useQuery();
 
-  console.log("allSlots", allSlots)
+  const utils = api.useUtils();
 
-  // const { data: allFacilities, isLoading } = api.facility.getAllByDate.useQuery({
+  const { data: bookings, isLoading: bookingsLoading } =
+    api.booking.getCalendarBookings.useQuery();
+
+  const { mutate: createBooking } = api.booking.create.useMutation({
+    onSuccess: async () => {
+      toast.success("Booking created successfully");
+      await utils.booking.getCalendarBookings.invalidate();
+    },
+    onError: () => {
+      toast.error("Failed to create booking");
+    },
+  });
+
+  // const { data: booked, isLoading } = api.facility.getAllByDate.useQuery({
   //   date: date ? new Date(date) : new Date(),
   //   facility: facility?.id ?? null,
   //   building: building?.id ?? null,
@@ -90,34 +98,38 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
 
   const facilities = _.groupBy(
     allFacilities,
-    (fac) => fac.building.name + "," + fac.building.location,
+    (fac: { building: { name: string; location: string } }) =>
+      fac.building.name + "," + fac.building.location,
   );
-  
-
 
   const form = useForm<TEventFormData>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
       room: "",
       slots: [],
-      date: typeof startDate !== "undefined" ? startDate : undefined,
+      date: startDate ? new Date(startDate) : new Date(),
     },
   });
 
   const onSubmit = (_values: TEventFormData) => {
     // TO DO: Create use-add-event hook
-
-    console.log(_values)
-    onClose();
+    console.log(_values);
+    const [room, schedule] = (_values.room ?? "").split(",");
+    createBooking({
+      slots: _values.slots?.map((s) => Number(s)) ?? [],
+      date: _values.date.toISOString(),
+      facility: Number(room),
+      schedule: Number(schedule),
+    });
     form.reset();
+    onClose();
   };
 
   useEffect(() => {
     form.reset({
-      date,
+      date: startDate ? new Date(startDate) : new Date(),
     });
-  }, [date, form.reset]);
-
+  }, [startDate, form.reset]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onToggle}>
@@ -145,10 +157,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                 <FormItem>
                   <FormLabel htmlFor="date">Date</FormLabel>
                   <FormControl className="w-full">
-                    <DatePicker
-                      onChange={field.onChange}
-                      value={field.value}
-                    />
+                    <DatePicker onChange={field.onChange} value={field.value} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -161,15 +170,13 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel htmlFor="Location">Room</FormLabel>
-                  <Select 
-                    onValueChange={
-                      (value: string) => {  
-                        console.log(value)
-                        field.onChange(value);
-                        setSchedule(value.split(',')[1] ?? "");
-                        form.setValue('slots', []);
-                      }
-                    } 
+                  <Select
+                    onValueChange={(value: string) => {
+                      console.log(value);
+                      field.onChange(value);
+                      setSchedule(value.split(",")[1] ?? "");
+                      form.setValue("slots", []);
+                    }}
                     value={field.value}
                   >
                     <SelectTrigger className="w-full **:data-desc:hidden">
@@ -216,30 +223,50 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                 <FormItem className="space-y-3">
                   <FormLabel>Time Slots</FormLabel>
                   <FormControl>
-                    <div className="grid grid-cols-2 gap-2 bg-gray-100 p-4 rounded-md max-h-60 overflow-y-auto">
-                      { schedule && allSlots?.[schedule]?.length ? allSlots[schedule].map((slot) => {
-                        const value = String(slot?.id);
-                        const inputId = `slot-${value}`;
-                        const isChecked = Array.isArray(field.value) && field.value.includes(value);
+                    <div className="grid max-h-60 grid-cols-2 gap-2 overflow-y-auto rounded-md bg-gray-100 p-4">
+                      {schedule && allSlots?.[schedule]?.length ? (
+                        allSlots[schedule].map((slot) => {
+                          const value = String(slot?.id);
+                          const inputId = `slot-${value}`;
+                          const isChecked =
+                            Array.isArray(field.value) &&
+                            field.value.includes(value);
 
-                        return (
-                          <div className="flex items-center gap-2 cursor-pointer p-2 rounded-sm " key={value}>
-                            <Checkbox
-                              id={inputId}
-                              className="border-black cursor-pointer"
-                              checked={isChecked}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  field.onChange([...(field.value ?? []), value]);
-                                } else {
-                                  field.onChange((field.value ?? []).filter((v: string) => v !== value));
-                                }
-                              }}
-                            />
-                            <Label htmlFor={inputId}>{ slot.start } - { slot.end } </Label>
-                          </div>
-                        );
-                      }) : <p className="text-sm text-gray-500">Please select a room to see available time slots.</p> }
+                          return (
+                            <div
+                              className="flex cursor-pointer items-center gap-2 rounded-sm p-2"
+                              key={value}
+                            >
+                              <Checkbox
+                                id={inputId}
+                                className="cursor-pointer border-black"
+                                checked={isChecked}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    field.onChange([
+                                      ...(field.value ?? []),
+                                      value,
+                                    ]);
+                                  } else {
+                                    field.onChange(
+                                      (field.value ?? []).filter(
+                                        (v: string) => v !== value,
+                                      ),
+                                    );
+                                  }
+                                }}
+                              />
+                              <Label htmlFor={inputId}>
+                                {slot.start} - {slot.end}{" "}
+                              </Label>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          Please select a room to see available time slots.
+                        </p>
+                      )}
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -250,12 +277,12 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="outline">
-                  Cancel 
+                  Cancel
                 </Button>
               </DialogClose>
 
               <Button form="event-form" type="submit">
-                Confirm 
+                Confirm
               </Button>
             </DialogFooter>
           </form>

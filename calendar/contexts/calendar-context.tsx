@@ -1,12 +1,12 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
+import { useEffect } from "react";
 
 import type { Dispatch, SetStateAction } from "react";
 import type { IEvent, IUser } from "@/calendar/interfaces";
 import type { TBadgeVariant, TVisibleHours, TWorkingHours } from "@/calendar/types";
 import type { Building } from "@/datatypes/types/building";
-import type { Location } from "@/datatypes/types/location";
 import type { Facility } from "@/datatypes/types/facility";
 
 interface ICalendarContext {
@@ -61,6 +61,11 @@ export function CalendarProvider({ children, users, events }: { children: React.
   // In a real scenario, the events would be updated in the backend
   // and the request that fetches the events should be refetched
   const [localEvents, setLocalEvents] = useState<IEvent[]>(events);
+
+  // Keep localEvents in sync when parent provides updated events (e.g., after refetch)
+  useEffect(() => {
+    setLocalEvents(events);
+  }, [events]);
 
   const handleSelectDate = (date: Date | undefined) => {
     if (!date) return;
