@@ -6,6 +6,7 @@ import { CalendarProvider } from "@/calendar/contexts/calendar-context";
 import { api } from "@/trpc/react";
 import type { IEvent } from "@/calendar/interfaces";
 import {useMedia} from 'react-use';
+import { Loader2 } from "lucide-react";
 
 interface BookingData {
   id: number;
@@ -43,11 +44,25 @@ export function BookingsCalendar() {
   const { data: users, isLoading: usersLoading } = api.user.getUsers.useQuery();
 
   if (bookingsLoading) {
-    return <div>Loading bookings...</div>;
+    return (
+      <div className="flex h-[60vh] w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <p className="text-sm">Loading bookings</p>
+        </div>
+      </div>
+    );
   }
 
   if (usersLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex h-[60vh] w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <p className="text-sm">Loading</p>
+        </div>
+      </div>
+    );
   }
 
   const events: IEvent[] =

@@ -18,7 +18,6 @@ interface IProps {
 export function CalendarAgendaView({ singleDayEvents, multiDayEvents }: IProps) {
   const { selectedDate, events } = useCalendar();
 
-
   const eventsByDay = useMemo(() => {
     const allDates = new Map<string, { date: Date; events: IEvent[]; multiDayEvents: IEvent[] }>();
 
