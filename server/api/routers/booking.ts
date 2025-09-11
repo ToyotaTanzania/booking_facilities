@@ -1,5 +1,5 @@
 import { date, z } from 'zod';
-import { createTRPCRouter, protectedProcedure } from '@/server'; 
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server'; 
 import { endOfYear, startOfYear } from 'date-fns';
 
 export const bookingRouter = createTRPCRouter({
@@ -58,7 +58,7 @@ export const bookingRouter = createTRPCRouter({
     }),
 
 
-    getCalendarBookings: protectedProcedure.query(async ({ ctx }) => {
+    getCalendarBookings: publicProcedure.query(async ({ ctx }) => {
       
       const { data, error } = await ctx.supabase
       .from('bookings')
