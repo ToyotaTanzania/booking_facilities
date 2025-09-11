@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { CalendarX2 } from "lucide-react";
-import { parseISO, format, endOfDay, startOfDay, isSameMonth } from "date-fns";
+import { parseISO, format, endOfDay, startOfDay, isSameMonth, startOfWeek, endOfWeek } from "date-fns";
 
 import { useCalendar } from "@/calendar/contexts/calendar-context";
 
@@ -17,11 +17,21 @@ interface IProps {
 
 export function CalendarAgendaView({ singleDayEvents, multiDayEvents }: IProps) {
   const { selectedDate, events } = useCalendar();
+  const weekStart = startOfWeek(selectedDate);
+  const weekEnd = endOfWeek(selectedDate);
+
+  const filtered = events.filter(event => { 
+    const eventStartDate = parseISO(event.startDate);
+    const eventEndDate = parseISO(event.endDate);
+
+    const isInSelectedWeek = eventStartDate <= weekEnd && eventEndDate >= weekStart;
+    return isInSelectedWeek;
+  });
 
   const eventsByDay = useMemo(() => {
     const allDates = new Map<string, { date: Date; events: IEvent[]; multiDayEvents: IEvent[] }>();
 
-    events.forEach(event => {
+    filtered.forEach(event => {
       const eventDate = parseISO(event.startDate);
       if (!isSameMonth(eventDate, selectedDate)) return;
 
