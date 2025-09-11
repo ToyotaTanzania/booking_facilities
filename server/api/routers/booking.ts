@@ -38,7 +38,7 @@ export const bookingRouter = createTRPCRouter({
       }
     ),
 
-    getBookings: protectedProcedure.input(z.object({
+    getBookings: publicProcedure.input(z.object({
         date: z.string(),
         facility: z.union([z.string(), z.number()]),
     })).query(async ({ input, ctx }) => {
