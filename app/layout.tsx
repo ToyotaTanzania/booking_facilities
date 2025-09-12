@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     default: "Meeting Hub - Karimjee",
   },
   description: "",
-  metadataBase: new URL(env.NEXT_PUBLIC_BASE_URL as string),
+  metadataBase: new URL(env.NEXT_PUBLIC_BASE_URL),
 }
 
 const latoFont = Lato({

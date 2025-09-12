@@ -13,6 +13,7 @@ import type { TCalendarView } from "@/calendar/types";
 import { BuildingSelect } from "./building-select";
 import { LocationSelect } from "./location-select";
 import { FacilitySelect } from "./facility-select";
+import Image from "next/image";
 
 interface IProps {
   view: TCalendarView;
@@ -22,6 +23,17 @@ interface IProps {
 export function CalendarHeader({ view, events }: IProps) {
   return (
     <div className="flex flex-col gap-4 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+
+    <div>
+      <Image 
+        src="https://ik.imagekit.io/ttltz/brands/one/one-colored_H32SW3x_4.png?updatedAt=1757667292237" 
+        alt="Karimjee Logo" 
+        width={150} 
+        height={50} 
+        className="object-contain"
+      />
+    </div>
+
       <div className="flex items-center gap-3">
         <TodayButton />
         <DateNavigator view={view} events={events} />
