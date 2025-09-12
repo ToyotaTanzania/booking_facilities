@@ -8,6 +8,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import Image from "next/image";
 import { Loader2, Mail, RefreshCw, ArrowLeft } from "lucide-react";
 import {
   Form,
@@ -169,119 +178,122 @@ export function OTPVerificationForm() {
 
   return (
     <div className="space-y-6">
-      {/* <CheckAuth /> */}
-      {/* Email Display */}
-      <div className="space-y-2 text-center">
-        <div className="text-muted-foreground flex items-center justify-center gap-2 text-sm">
-          <Mail className="h-4 w-4" />
-          <span>Code sent to:</span>
-        </div>
-        <p className="text-sm font-medium">{email}</p>
-      </div>
+      
 
-      {/* OTP Form */}
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="otp"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel htmlFor="otp">Verification Code</FormLabel>
-                <FormControl>
-                  <Input
-                    id="otp"
-                    placeholder="123456"
-                    type="text"
-                    maxLength={6}
-                    autoComplete="one-time-code"
-                    disabled={isLoading}
-                    className="text-center font-mono text-lg tracking-widest"
-                    {...field}
-                    onChange={(e) => {
-                      // Only allow numbers
-                      const value = e.target.value.replace(/\D/g, "");
-                      field.onChange(value);
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-                <p className="text-muted-foreground text-center text-xs">
-                  Enter the 6-digit code sent to your email
-                </p>
-              </FormItem>
-            )}
-          />
+      <Card className="border-border/80 shadow-md rounded-md">
+        {/* <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl">Verify Your Email</CardTitle>
+          <CardDescription>Enter the 6-digit code sent to your email</CardDescription>
+        </CardHeader> */}
+        <CardContent className="space-y-6" >
+          <div className="space-y-2 text-center">
+            <div className="text-muted-foreground flex items-center justify-center gap-2 text-sm">
+              <Mail className="h-4 w-4" />
+              <span>Code sent to:</span>
+            </div>
+            <p className="text-sm font-medium">{email}</p>
+          </div>
 
-          <Button
-            type="submit"
-            disabled={
-              isLoading || !form.watch("otp") || form.watch("otp")?.length !== 6
-            }
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Verifying...
-              </>
-            ) : (
-              "Verify Code"
-            )}
-          </Button>
-        </form>
-      </Form>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="otp"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="otp">Verification Code</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="otp"
+                        placeholder="123456"
+                        type="text"
+                        maxLength={6}
+                        autoComplete="one-time-code"
+                        disabled={isLoading}
+                        className="text-center font-mono text-lg tracking-widest focus-visible:ring-primary focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background border-input"
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "");
+                          field.onChange(value);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <p className="text-muted-foreground text-center text-xs">
+                      Enter the 6-digit code sent to your email
+                    </p>
+                  </FormItem>
+                )}
+              />
 
-      {/* Resend and Back Options */}
-      <div className="space-y-4">
-        {/* Resend OTP Button */}
-        <div className="text-center">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleResendOTP}
-            disabled={isResending || countdown > 0}
-            className="w-full"
-          >
-            {isResendingOTP ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Resending...
-              </>
-            ) : countdown > 0 ? (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Resend in {countdown}s
-              </>
-            ) : (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Resend Code
-              </>
-            )}
-          </Button>
-        </div>
+              <Button
+                type="submit"
+                disabled={
+                  isLoading || !form.watch("otp") || form.watch("otp")?.length !== 6
+                }
+                className="w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  "Verify Code"
+                )}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+        <CardFooter className="flex-col items-stretch gap-2">
+          <div className="space-y-4">
+            <div className="text-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResendOTP}
+                disabled={isResending || countdown > 0}
+                className="w-full"
+              >
+                {isResendingOTP ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Resending...
+                  </>
+                ) : countdown > 0 ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Resend in {countdown}s
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Resend Code
+                  </>
+                )}
+              </Button>
+            </div>
 
-        {/* Back to Login */}
-        <div className="text-center">
-          <Button
-            variant="link"
-            size="sm"
-            onClick={handleBackToLogin}
-            disabled={isLoading}
-            className="px-0"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Login
-          </Button>
-        </div>
-      </div>
+            <div className="text-center">
+              <Button
+                variant="link"
+                size="sm"
+                onClick={handleBackToLogin}
+                disabled={isLoading}
+                className="px-0"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Login
+              </Button>
+            </div>
+          </div>
 
-      {/* Help Text */}
-      <div className="text-muted-foreground space-y-1 text-center text-xs">
-        <p>Didn&apos;t receive the code?</p>
-        <p>Check your spam folder or try resending</p>
-      </div>
+          <div className="text-muted-foreground space-y-1 text-center text-xs">
+            <p>Didn&apos;t receive the code?</p>
+            <p>Check your spam folder or try resending</p>
+          </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

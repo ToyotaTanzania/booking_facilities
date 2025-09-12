@@ -1,15 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import Image from "next/image";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -34,7 +42,7 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isTokenSent, setIsTokenSent] = useState(false);
 
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
 
   const { mutate: searchUser, isPending: isSearching } =
@@ -46,7 +54,7 @@ export function LoginForm() {
             router.push(`/auth/verify?email=${email}`); 
           }
         }, 
-        onError: (error) => { 
+        onError: (_error) => { 
           toast.error("Unknown user, Please contact administrator")
         }
     })
@@ -67,7 +75,6 @@ export function LoginForm() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    const { email, token } = data;
     if (isSearching) {
       toast.error("Please wait for the previous request to complete");
       return;
@@ -103,93 +110,113 @@ export function LoginForm() {
 
   return (
     <div className="grid gap-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel htmlFor="email">Email</FormLabel>
-                <FormControl>
-                  <Input
-                    id="email"
-                    placeholder="name@example.com"
-                    type="email"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    autoCorrect="off"
-                    disabled={isLoading || isTokenSent}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      {/* Small-screen brand header (hidden on lg and up) */}
+      <div className="lg:hidden flex items-center justify-center">
+        <Image
+          src="https://ik.imagekit.io/ttltz/brands/one/one-colored_H32SW3x_4.png?updatedAt=1757667292237"
+          alt="Brand"
+          width={140}
+          height={40}
+          className="h-10 w-auto"
+          priority
+        />
+      </div>
 
-          {isTokenSent && (
-            <FormField
-              control={form.control}
-              name="token"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel htmlFor="token">Verification Code</FormLabel>
-                  <FormControl>
-                    <Input
-                      id="token"
-                      placeholder="123456"
-                      type="text"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+      <Card className="border-border/80 shadow-md rounded-sm">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardDescription>Sign in with your work email</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="email">Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="email"
+                        placeholder="name@example.com"
+                        type="email"
+                        autoCapitalize="none"
+                        autoComplete="email"
+                        autoCorrect="off"
+                        disabled={isLoading || isTokenSent}
+                        className="focus-visible:ring-primary border-gray-200 rounderd-sm border focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background "
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {isTokenSent && (
+                <FormField
+                  control={form.control}
+                  name="token"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="token">Verification Code</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="token"
+                          placeholder="123456"
+                          type="text"
+                          disabled={isLoading}
+                          className="tracking-widest  focus-visible:ring-primary focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background border-input"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            />
-          )}
 
-          <Button type="submit" className="cursor-pointer" disabled={isSearching}>
-            {isSearching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isTokenSent ? "Verify Code" : "Sign In with Email"}
-          </Button>
-        </form>
-      </Form>
+              <Button type="submit" className="cursor-pointer w-full" disabled={isSearching}>
+                {isSearching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isTokenSent ? "Verify Code" : "Sign In with Email"}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+        {isTokenSent && (
+          <CardFooter className="flex-col items-stretch gap-2">
+            <div className="text-muted-foreground text-center text-sm w-full">
+              Check your email for the verification code.
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="cursor-pointer"
+                onClick={handleResendCode}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  "Resend Code"
+                )}
+              </Button>
 
-      {isTokenSent && (
-        <div className="space-y-4">
-          <div className="text-muted-foreground text-center text-sm">
-            Check your email for the verification code.
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="cursor-pointer"
-              onClick={handleResendCode}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                "Resend Code"
-              )}
-            </Button>
-
-            <Button
-              variant="link"
-              size="sm"
-              className="cursor-pointer"
-              onClick={handleUseDifferentEmail}
-              disabled={isLoading}
-            >
-              Use a different email
-            </Button>
-          </div>
-        </div>
-      )}
+              <Button
+                variant="link"
+                size="sm"
+                className="cursor-pointer"
+                onClick={handleUseDifferentEmail}
+                disabled={isLoading}
+              >
+                Use a different email
+              </Button>
+            </div>
+          </CardFooter>
+        )}
+      </Card>
     </div>
   );
 }
