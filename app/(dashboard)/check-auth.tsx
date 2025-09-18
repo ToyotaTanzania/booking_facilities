@@ -12,5 +12,5 @@ export default function CheckAuth() {
     return null
   }
 
-  return <div>Authenticated {session.user?.email}</div>;
+  return null
 }
