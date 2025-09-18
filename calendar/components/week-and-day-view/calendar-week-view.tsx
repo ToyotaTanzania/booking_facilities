@@ -37,7 +37,9 @@ export function CalendarWeekView({ singleDayEvents, multiDayEvents }: IProps) {
 
       <div className="hidden flex-col sm:flex">
         <div>
-          <WeekViewMultiDayEventsRow selectedDate={selectedDate} multiDayEvents={multiDayEvents} />
+          <WeekViewMultiDayEventsRow
+           selectedDate={selectedDate} 
+          multiDayEvents={multiDayEvents} />
 
           {/* Week header */}
           <div className="relative z-20 flex border-b">

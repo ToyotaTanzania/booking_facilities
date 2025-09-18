@@ -15,6 +15,8 @@ export function WeekViewMultiDayEventsRow({ selectedDate, multiDayEvents }: IPro
   const weekEnd = endOfWeek(selectedDate);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
+
+  
   const processedEvents = useMemo(() => {
     return multiDayEvents
       .map(event => {

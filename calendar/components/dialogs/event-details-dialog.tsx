@@ -15,6 +15,9 @@ interface IProps {
 }
 
 export function EventDetailsDialog({ event, children }: IProps) {
+
+  console.log("event details dialog")
+  console.log(event)
   const startDate = parseISO(event.startDate);
   const endDate = parseISO(event.endDate);
 

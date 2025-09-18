@@ -61,6 +61,8 @@ interface IProps {
 
 export function AddEventDialog({ children, startDate }: IProps) {
   const session = useSession();
+
+  
   const [schedule, setSchedule] = useState<string>("");
   const { users, events, setLocalEvents } = useCalendar();
   

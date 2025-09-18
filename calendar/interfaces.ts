@@ -54,7 +54,6 @@ export interface IProfiles {
   role: string;
   email: string;
   isActive: boolean;
-  emy: number
 }
 
 export interface IUser extends IProfiles { 
@@ -63,15 +62,19 @@ export interface IUser extends IProfiles {
 }
 
 export interface IEvent {
-  id: number;
-  startDate: string;
-  endDate: string;
-  title: string;
-  color: TEventColor;
+  user: string | IProfiles;
+  facility: number | IFacility;
+  slot: number | ISlot;
+  date: string | Date;
+  schedule: number | ISchedule;
+  created_at: string | Date;
+  approved_at: string | Date | null;
+  status : "pending" | "approved" | "rejected" | "confirmed" | "cancelled"; 
   description: string;
-  user: IProfiles;
-
-  
+  approved_by: string | IProfiles | null;
+  comment: string;
+  start: string;
+  end: string;
 }
 
 export interface ICalendarCell {

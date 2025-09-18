@@ -25,6 +25,8 @@ export function ClientContainer({ view }: IProps) {
 
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
+
+      console.log(event)
       
       const eventStartDate = parseISO(event.startDate);
       const eventEndDate = parseISO(event.endDate);
@@ -87,9 +89,9 @@ export function ClientContainer({ view }: IProps) {
   // For year view, we only care about the start date
   // by using the same date for both start and end,
   // we ensure only the start day will show a dot
-  const eventStartDates = useMemo(() => {
-    return filteredEvents.map(event => ({ ...event, endDate: event.startDate }));
-  }, [filteredEvents]);
+  // const eventStartDates = useMemo(() => {
+  //   return filteredEvents.map(event => ({ ...event, endDate: event.startDate }));
+  // }, [filteredEvents]);
 
   return (
     <div className="h-full w-full ">

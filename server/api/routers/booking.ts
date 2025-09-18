@@ -62,17 +62,25 @@ export const bookingRouter = createTRPCRouter({
       
       const { data, error } = await ctx.supabase
       .from('bookings')
-      .select('*, user:profiles(*), slot:slots(*), facility:facilities(*)')
+      .select('*, user:profiles(*), slot:slots(*), facility:facilities(*, building(*))')
       // .between('date', [startOfYear(new Date(input.date)).toISOString(), endOfYear(new Date(input.date)).toISOString()])
       .lt('date', endOfYear(new Date()).toISOString())
       .gt('date', startOfYear(new Date()).toISOString())
       // .eq('status', 'confirmed')
+
+      const { data: responsible, error: responsibleError } = await ctx.supabase.from("responsible_person").select("*");
       
       if (error) {
         throw new Error(error.message)
       }
 
-      return data
+      return data?.map(booking => {
+        const responsiblePerson = responsible?.find(rp => rp.facility === booking.facility.id);
+        return {
+          ...booking,
+          responsiblePerson: responsiblePerson || null
+        }}
+      );  
     }),
 
 

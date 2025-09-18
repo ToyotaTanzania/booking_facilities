@@ -90,6 +90,7 @@ export function BookingsCalendar() {
             booking.facility.id,
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
+          ...booking,
           title: `${booking.facility.name} - ${booking.user.email}`,
           color:
             booking.status === "confirmed"
@@ -102,6 +103,7 @@ export function BookingsCalendar() {
             id: booking.user.userid,
             name: booking.user.name,
             picturePath: null,
+            ...booking.user
           },
         };
       })
