@@ -34,10 +34,22 @@ export function CalendarHeader({ view, events }: IProps) {
       />
     </div>
 
-      <div className="flex items-center gap-3">
+
+<div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
+<div className="flex items-center gap-3">
         <TodayButton />
         <DateNavigator view={view} events={events} />
+        
       </div>
+
+<AddEventDialog>
+          <Button className="w-full sm:w-auto">
+            <Plus />
+            Book Event
+          </Button>
+        </AddEventDialog>
+</div>
+      
 
       <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between">
         <div className="flex w-full items-center gap-1.5">
@@ -103,12 +115,6 @@ export function CalendarHeader({ view, events }: IProps) {
           <FacilitySelect /> */}
         </div>
 
-        <AddEventDialog>
-          <Button className="w-full sm:w-auto">
-            <Plus />
-           Book Event
-          </Button>
-        </AddEventDialog>
       </div>
     </div>
   );

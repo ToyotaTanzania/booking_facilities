@@ -26,7 +26,7 @@ export function ClientContainer({ view }: IProps) {
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
 
-      console.log(event)
+      // console.log(event)
       
       const eventStartDate = parseISO(event.startDate);
       const eventEndDate = parseISO(event.endDate);
