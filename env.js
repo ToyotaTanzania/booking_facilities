@@ -15,6 +15,10 @@ export const env = createEnv({
         SUPABASE_ANON_KEY: z.string(),
         SUPABASE_SERVICE_ROLE_KEY: z.string(),   
         NEXTAUTH_URL: z.string(),
+        SMTP_HOST: z.string().optional(),
+        SMTP_PORT: z.coerce.number().optional(),
+        SMTP_USER: z.string().optional(),
+        SMTP_PASSWORD: z.string().optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -45,6 +49,10 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
+    SMTP_HOST: process.env.SMTP_HOST,
+    SMTP_PORT: process.env.SMTP_PORT,
+    SMTP_USER: process.env.SMTP_USER,
+    SMTP_PASSWORD: process.env.SMTP_PASSWORD,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

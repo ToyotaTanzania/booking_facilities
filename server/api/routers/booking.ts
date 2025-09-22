@@ -17,6 +17,8 @@ export const bookingRouter = createTRPCRouter({
 
         const { slots, date, schedule, facility } = input
 
+        const mailer = ctx.mailer;
+
         const { data, error } = await ctx.supabase
         .from('bookings')
         .insert(slots.map(slot => ({
@@ -32,6 +34,21 @@ export const bookingRouter = createTRPCRouter({
         if (error) {
           console.log(error)
           throw new Error(error.message)
+        }
+
+        const { data: responsible, error: responsibleError } = await ctx.supabase
+        .from("responsible_person")
+        .select("*")
+        .eq("facility", facility)
+        .single();
+
+        if (responsible) {
+          mailer.sendMail({ 
+            from: "no-reply@karimjee.com",
+            to: responsible.email,
+            subject: "New Booking Request",
+            text: `A new booking request has been made by ${ctx.session.user.email} for facility ID ${facility} on ${date} for slots ${slots.join(", ")}.`,
+          })
         }
 
         return data

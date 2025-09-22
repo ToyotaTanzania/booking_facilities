@@ -14,6 +14,7 @@ import { ZodError } from "zod";
 import { auth } from "@/server/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { mailer } from "@/lib/mailer";
 
 /**
  * 1. CONTEXT
@@ -36,6 +37,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
     supabase: serverDB,
     client: clientDB,
     session,
+    mailer,
     ...opts,
   };
 };
