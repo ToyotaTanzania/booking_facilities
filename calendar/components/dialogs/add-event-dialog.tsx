@@ -139,7 +139,6 @@ export function AddEventDialog({ children, startDate }: IProps) {
 
   const onSubmit = (_values: TEventFormData) => {
     // TO DO: Create use-add-event hook
-    console.log(_values);
     const [room, schedule] = (_values.room ?? "").split(",");
     createBooking({
       slots: _values.slots?.map((s) => Number(s)) ?? [],
@@ -159,9 +158,7 @@ export function AddEventDialog({ children, startDate }: IProps) {
 
 
 useMount(() => {  
-  console.log("Mounting")
   console.log(session);
-  console.log("End mounting");
 });
 
   return (

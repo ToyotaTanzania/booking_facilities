@@ -5,7 +5,7 @@ import { CalendarProvider } from "@/calendar/contexts/calendar-context";
 
 import { api } from "@/trpc/react";
 import type { IEvent } from "@/calendar/interfaces";
-import {useMedia} from 'react-use';
+import { useMedia } from "react-use";
 import { Loader2 } from "lucide-react";
 
 interface BookingData {
@@ -38,15 +38,17 @@ interface UserData {
 }
 
 export function BookingsCalendar() {
-  const state = useMedia('(max-width: 640px)');
+  const state = useMedia("(max-width: 640px)");
   const { data: bookings, isLoading: bookingsLoading } =
     api.booking.getCalendarBookings.useQuery();
   const { data: users, isLoading: usersLoading } = api.user.getUsers.useQuery();
+  const { data: persons, isLoading: responsibleLoading } =
+    api.facility.getResponsibles.useQuery();
 
   if (bookingsLoading) {
     return (
       <div className="flex h-[60vh] w-full items-center justify-center">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+        <div className="text-muted-foreground flex flex-col items-center gap-3">
           <Loader2 className="h-6 w-6 animate-spin" />
           <p className="text-sm">Loading bookings</p>
         </div>
@@ -57,7 +59,18 @@ export function BookingsCalendar() {
   if (usersLoading) {
     return (
       <div className="flex h-[60vh] w-full items-center justify-center">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+        <div className="text-muted-foreground flex flex-col items-center gap-3">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <p className="text-sm">Loading</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (responsibleLoading) {
+    return (
+      <div className="flex h-[60vh] w-full items-center justify-center">
+        <div className="text-muted-foreground flex flex-col items-center gap-3">
           <Loader2 className="h-6 w-6 animate-spin" />
           <p className="text-sm">Loading</p>
         </div>
@@ -103,7 +116,7 @@ export function BookingsCalendar() {
             id: booking.user.userid,
             name: booking.user.name,
             picturePath: null,
-            ...booking.user
+            ...booking.user,
           },
         };
       })
@@ -120,9 +133,10 @@ export function BookingsCalendar() {
           picturePath: user.avatar_url,
         })) ?? []
       }
+      persons={persons ?? []}
       events={events}
     >
-      <ClientContainer view={state ? "agenda" : "week" } />
+      <ClientContainer view={state ? "agenda" : "week"} />
     </CalendarProvider>
   );
 }

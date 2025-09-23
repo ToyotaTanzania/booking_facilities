@@ -2,7 +2,7 @@
 
 import { format, parseISO } from "date-fns";
 import { Calendar, Clock, Text, User } from "lucide-react";
-
+import { useCalendar } from "@/calendar/contexts/calendar-context";
 import { Button } from "@/components/ui/button";
 import { EditEventDialog } from "@/calendar/components/dialogs/edit-event-dialog";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -16,10 +16,12 @@ interface IProps {
 
 export function EventDetailsDialog({ event, children }: IProps) {
 
-  console.log("event details dialog")
-  console.log(event)
+  const { responsibles } = useCalendar();
+
   const startDate = parseISO(event.startDate);
   const endDate = parseISO(event.endDate);
+
+  const responsible = responsibles.find(r => r.facility.id === event.facility.id);
 
   return (
     <>
@@ -63,6 +65,12 @@ export function EventDetailsDialog({ event, children }: IProps) {
                 <p className="text-sm text-muted-foreground">{event.description}</p>
               </div>
             </div>
+          </div>
+
+          <div>
+            { 
+              responsible && "Contact: " + responsible.name + " - " + responsible.email
+            }
           </div>
 
           <DialogFooter>

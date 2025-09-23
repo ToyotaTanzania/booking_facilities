@@ -1,3 +1,5 @@
+'use client'
+
 import { cva } from "class-variance-authority";
 import { format, differenceInMinutes, parseISO } from "date-fns";
 
@@ -63,7 +65,6 @@ interface IProps
 export function EventBlock({ event, className }: IProps) {
   const { badgeVariant } = useCalendar();
 
-  console.log("event block");
   console.log(event);
 
   const start = parseISO(event.startDate);
@@ -78,6 +79,8 @@ export function EventBlock({ event, className }: IProps) {
   const calendarWeekEventCardClasses = cn(
     calendarWeekEventCardVariants({ color, className }),
     durationInMinutes < 35 && "py-0 justify-center",
+    'rounded-xs', 
+    "cursor-pointer"
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -87,10 +90,8 @@ export function EventBlock({ event, className }: IProps) {
     }
   };
 
-
-
   return (
-    <DraggableEvent event={event}>
+    // <DraggableEvent event={event}>
       <EventDetailsDialog event={event}>
         <div
           role="button"
@@ -153,6 +154,6 @@ export function EventBlock({ event, className }: IProps) {
           </div>
         </div>
       </EventDetailsDialog>
-    </DraggableEvent>
+    // </DraggableEvent>
   );
 }

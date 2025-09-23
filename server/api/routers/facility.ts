@@ -318,6 +318,17 @@ export const facilityRouter = createTRPCRouter({
       return { success: true }
     }),
 
+    getResponsibles: publicProcedure
+    .query(async ({ ctx, input }) => {
+      // Check if facility has any bookings
+      const { data, error  } = await ctx.supabase
+        .from("responsible_person")
+        .select(`*, facility(*, building(*))`);
+
+      if (error) throw error;
+
+      return data;
+    }),
 
   delete: publicProcedure
     .input(z.number())

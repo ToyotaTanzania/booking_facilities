@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { isSameDay, parseISO } from "date-fns";
 
 import { useCalendar } from "@/calendar/contexts/calendar-context";
@@ -15,13 +15,22 @@ import { CalendarAgendaView } from "@/calendar/components/agenda-view/calendar-a
 import { CalendarWeekView } from "@/calendar/components/week-and-day-view/calendar-week-view";
 
 import type { TCalendarView } from "@/calendar/types";
+import { api } from "@/trpc/react";
 
 interface IProps {
   view: TCalendarView;
 }
 
 export function ClientContainer({ view }: IProps) {
-  const { selectedDate, selectedUserId, events } = useCalendar();
+  const { selectedDate, selectedUserId, events, responsibles, setResponsibles} = useCalendar();
+
+  const { data: persons, isLoading: responsibleLoading } = api.facility.getResponsibles.useQuery();
+
+  useEffect(() => {
+    if (responsibleLoading === false && persons) {
+      setResponsibles(persons);
+    }
+  }, [persons, responsibleLoading]);
 
   const filteredEvents = useMemo(() => {
     return events.filter(event => {

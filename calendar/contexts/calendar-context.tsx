@@ -29,6 +29,8 @@ interface ICalendarContext {
   setVisibleHours: Dispatch<SetStateAction<TVisibleHours>>;
   events: IEvent[];
   setLocalEvents: Dispatch<SetStateAction<IEvent[]>>;
+  responsibles: any[];
+  setResponsibles: Dispatch<SetStateAction<any[]>>;
 }
 
 const CalendarContext = createContext({} as ICalendarContext);
@@ -45,10 +47,11 @@ const WORKING_HOURS = {
 
 const VISIBLE_HOURS = { from: 7, to: 18 };
 
-export function CalendarProvider({ children, users, events }: { children: React.ReactNode; users: IUser[]; events: IEvent[] }) {
+export function CalendarProvider({ children, users, events, persons}: { children: React.ReactNode; users: IUser[]; events: IEvent[], persons: any[] }) {
   const [badgeVariant, setBadgeVariant] = useState<TBadgeVariant>("colored");
   const [visibleHours, setVisibleHours] = useState<TVisibleHours>(VISIBLE_HOURS);
   const [workingHours, setWorkingHours] = useState<TWorkingHours>(WORKING_HOURS);
+  const [ responsibles, setResponsibles ] = useState<any[]>([]); 
 
   const [selectedDate, setSelectedDate] = useState(new Date());
 
@@ -66,6 +69,10 @@ export function CalendarProvider({ children, users, events }: { children: React.
   useEffect(() => {
     setLocalEvents(events);
   }, [events]);
+
+  useEffect(() => {
+   setResponsibles(persons);
+  }, [persons]);
 
   const handleSelectDate = (date: Date | undefined) => {
     if (!date) return;
@@ -85,6 +92,8 @@ export function CalendarProvider({ children, users, events }: { children: React.
         setSelectedFacilityId,
         badgeVariant,
         setBadgeVariant,
+        responsibles,
+        setResponsibles,
         users,
         visibleHours,
         setVisibleHours,

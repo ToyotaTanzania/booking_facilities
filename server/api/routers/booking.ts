@@ -36,18 +36,20 @@ export const bookingRouter = createTRPCRouter({
           throw new Error(error.message)
         }
 
-        const { data: responsible, error: responsibleError } = await ctx.supabase
+        const { data: responsible } = await ctx.supabase
         .from("responsible_person")
-        .select("*")
+        .select("*, facility(*, building(*))")
         .eq("facility", facility)
         .single();
 
         if (responsible) {
-          mailer.sendMail({ 
+          await mailer.sendMail({ 
             from: "no-reply@karimjee.com",
             to: responsible.email,
             subject: "New Booking Request",
-            text: `A new booking request has been made by ${ctx.session.user.email} for facility ID ${facility} on ${date} for slots ${slots.join(", ")}.`,
+            text: `A new booking request has been made by 
+            ${ctx.session.user.email} 
+            for ${responsible?.facility?.name}, ${responsible?.facility?.building?.name}, ${responsible?.facility?.building?.location} on ${date}. Please take a look`,
           })
         }
 
@@ -86,6 +88,7 @@ export const bookingRouter = createTRPCRouter({
       // .eq('status', 'confirmed')
 
       const { data: responsible, error: responsibleError } = await ctx.supabase.from("responsible_person").select("*");
+      const { data: bookingSlots } = await ctx.supabase.from("slots").select("*");
       
       if (error) {
         throw new Error(error.message)
@@ -95,7 +98,8 @@ export const bookingRouter = createTRPCRouter({
         const responsiblePerson = responsible?.find(rp => rp.facility === booking.facility.id);
         return {
           ...booking,
-          responsiblePerson: responsiblePerson || null
+          responsiblePerson: responsiblePerson || null,
+          slots: bookingSlots?.filter(slot => slot.schedule === booking.schedule) || [],
         }}
       );  
     }),
