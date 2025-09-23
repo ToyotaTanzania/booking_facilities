@@ -16,6 +16,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+
 import {
   Dialog,
   DialogHeader,
@@ -57,7 +58,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
 import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
 
-
 // import { useEffect } from "react";
 // import { useForm } from "react-hook-form";
 // import { zodResolver } from "@hookform/resolvers/zod";
@@ -85,10 +85,8 @@ interface IProps {
 export function AddEventDialog({ children, startDate }: IProps) {
   const session = useSession();
 
-  
   const [schedule, setSchedule] = useState<string>("");
-  const { users, events, setLocalEvents } = useCalendar();
-  
+
   const { isOpen, onClose, onToggle } = useDisclosure();
   const { data: allSlots } = api.slots.getAll.useQuery();
   const { data: allFacilities } = api.facility.getAll.useQuery();
@@ -156,340 +154,173 @@ export function AddEventDialog({ children, startDate }: IProps) {
     });
   }, [startDate, form]);
 
-
-useMount(() => {  
-  console.log(session);
-});
+  useMount(() => {
+    // console.log(session);
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onToggle}>
-    <DialogTrigger asChild>{children}</DialogTrigger>
-    <DialogContent>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>New Booking</DialogTitle>
           <DialogDescription>
-            This is just and example of how to use the form. In a real
-            application, you would call the API to create the booking
+            {/* This is just and example of how to use the form. In a real
+            application, you would call the API to create the booking */}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-
-
-
-<form
-
-
-  id="event-form"
-
-
-  onSubmit={form.handleSubmit(onSubmit)}
-
-
-  className="grid gap-4 py-4"
-
-
->
-
-
-  <FormField
-
-
-    control={form.control}
-
-
-    name="date"
-
-
-    render={({ field }) => (
-
-
-      <FormItem>
-
-
-        <FormLabel htmlFor="date">Date</FormLabel>
-
-
-        <FormControl className="w-full">
-
-
-          <DatePicker onChange={field.onChange} value={field.value} />
-
-
-        </FormControl>
-
-
-        <FormMessage />
-
-
-      </FormItem>
-
-
-    )}
-
-
-  />
-
-
-
-
-
-  <FormField
-
-
-    control={form.control}
-
-
-    name="room"
-
-
-    render={({ field }) => (
-
-
-      <FormItem>
-
-
-        <FormLabel htmlFor="Location">Room</FormLabel>
-
-
-        <Select
-
-
-          onValueChange={(value: string) => {
-
-
-            console.log(value);
-
-
-            field.onChange(value);
-
-
-            setSchedule(value.split(",")[1] ?? "");
-
-
-            form.setValue("slots", []);
-
-
-          }}
-
-
-          value={field.value}
-
-
-        >
-
-
-          <SelectTrigger className="w-full **:data-desc:hidden">
-
-
-            <SelectValue placeholder="Choose a plan" />
-
-
-          </SelectTrigger>
-
-
-          <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
-
-
-            {_.filter(facilities, (f) => f.length > 0).map(
-
-
-              (group, index) => (
-
-
-                <div key={index}>
-
-
-                  <div className="text-muted-foreground px-2 py-1 text-sm font-medium">
-
-
-                    {_.startCase(group[0].building.name)},{" "}
-
-
-                    {_.startCase(group[0].building.location)}
-
-
-                  </div>
-
-
-                  {group.map((facility) => (
-
-
-                    <SelectItem
-
-
-                      key={facility.id.toString() + index}
-
-
-                      value={`${facility.id.toString()},${facility.schedule}`}
-
-
-                      onSelect={field.onChange}
-
-
-                      className="cursor-pointer"
-
-
-                    >
-
-
-                      {_.startCase(facility.name)}{" "}
-
-
-                      <span
-
-
-                        className="text-muted-foreground mt-1 block text-xs"
-
-
-                        data-desc
-
-
-                      >
-
-
-                        Capacity: {facility.capacity}
-
-
-                      </span>
-
-
-                    </SelectItem>
-
-
-                  ))}
-
-
-                </div>
-
-
-              ),
-
-
-            )}
-
-
-          </SelectContent>
-
-
-        </Select>
-
-
-        <FormMessage />
-
-
-      </FormItem>
-
-
-    )}
-
-
-  />
-
-
-
-
-
-  <FormField
-
-
-    control={form.control}
-
-
-    name="slots"
-
-
-    render={({ field }) => (
-
-
-      <FormItem className="space-y-3">
-
-
-        <FormLabel>Time Slots</FormLabel>
-
-
-        <FormControl>
-
-
-          <div className="grid max-h-60 grid-cols-2 gap-2 overflow-y-auto rounded-md bg-gray-100 p-4">
-
-
-            {schedule && allSlots?.[schedule]?.length ? (
-              allSlots[schedule].map((slot) => {
-                const value = String(slot?.id);
-                const inputId = `slot-${value}`;
-                const isChecked =
-                  Array.isArray(field.value) &&
-                  field.value.includes(value);
-                return (
-                  <div
-                    className="flex cursor-pointer items-center gap-2 rounded-sm p-2"
-                    key={value}
+          <form
+            id="event-form"
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="grid gap-4 py-4"
+          >
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="date">Date</FormLabel>
+
+                  <FormControl className="w-full">
+                    <DatePicker onChange={field.onChange} value={field.value} />
+                  </FormControl>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="room"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="Location">Room</FormLabel>
+
+                  <Select
+                    onValueChange={(value: string) => {
+                      console.log(value);
+
+                      field.onChange(value);
+
+                      setSchedule(value.split(",")[1] ?? "");
+
+                      form.setValue("slots", []);
+                    }}
+                    value={field.value}
                   >
-                    <Checkbox
-                      id={inputId}
-                      className="cursor-pointer border-black"
-                      checked={isChecked}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          field.onChange([
-                            ...(field.value ?? []),
-                            value,
-                          ]);
-                        } else {
-                          field.onChange(
-                            (field.value ?? []).filter(
-                              (v: string) => v !== value,
-                            ),
+                    <SelectTrigger className="w-full **:data-desc:hidden">
+                      <SelectValue placeholder="Choose a plan" />
+                    </SelectTrigger>
+
+                    <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
+                      {_.filter(facilities, (f) => f.length > 0).map(
+                        (group, index) => (
+                          <div key={index}>
+                            <div className="text-muted-foreground px-2 py-1 text-sm font-medium">
+                              {_.startCase(group[0].building.name)},{" "}
+                              {_.startCase(group[0].building.location)}
+                            </div>
+
+                            {group.map((facility) => (
+                              <SelectItem
+                                key={facility.id.toString() + index}
+                                value={`${facility.id.toString()},${facility.schedule}`}
+                                onSelect={field.onChange}
+                                className="cursor-pointer"
+                              >
+                                {_.startCase(facility.name)}{" "}
+                                <span
+                                  className="text-muted-foreground mt-1 block text-xs"
+                                  data-desc
+                                >
+                                  Capacity: {facility.capacity}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </div>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="slots"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Time Slots</FormLabel>
+
+                  <FormControl>
+                    <div className="grid max-h-60 grid-cols-2 gap-2 overflow-y-auto rounded-md bg-gray-100 p-4">
+                      {schedule && allSlots?.[schedule]?.length ? (
+                        allSlots[schedule].map((slot) => {
+                          const value = String(slot?.id);
+                          const inputId = `slot-${value}`;
+                          const isChecked =
+                            Array.isArray(field.value) &&
+                            field.value.includes(value);
+                          return (
+                            <div
+                              className="flex cursor-pointer items-center gap-2 rounded-sm p-2"
+                              key={value}
+                            >
+                              <Checkbox
+                                id={inputId}
+                                className="cursor-pointer border-black"
+                                checked={isChecked}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    field.onChange([
+                                      ...(field.value ?? []),
+                                      value,
+                                    ]);
+                                  } else {
+                                    field.onChange(
+                                      (field.value ?? []).filter(
+                                        (v: string) => v !== value,
+                                      ),
+                                    );
+                                  }
+                                }}
+                              />
+                              <Label htmlFor={inputId}>
+                                {slot.start} - {slot.end}{" "}
+                              </Label>
+                            </div>
                           );
-                        }
-                      }}
-                    />
-                    <Label htmlFor={inputId}>
-                      {slot.start} - {slot.end}{" "}
-                    </Label>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="text-sm text-gray-500">
-                Please select a room to see available time slots.
-              </p>
-            )}
-          </div>
-        </FormControl>
-        <FormMessage />
-      </FormItem>
-    )}
-  />
+                        })
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          Please select a room to see available time slots.
+                        </p>
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-  <DialogFooter>
-    <DialogClose asChild>
-      <Button type="button" variant="outline">
-        Cancel
-      </Button>
-    </DialogClose>
-    <Button form="event-form" type="submit">
-
-
-
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button form="event-form" type="submit">
                 Confirm
-
-
               </Button>
-
-
             </DialogFooter>
-
-
           </form>
-
-
         </Form>
-
-
       </DialogContent>
-
-
     </Dialog>
   );
 }
