@@ -75,6 +75,13 @@ export interface IEvent {
   comment: string;
   start: string;
   end: string;
+
+  // Optional fields used by calendar rendering
+  id?: number | string;
+  title?: string;
+  color?: TEventColor | string;
+  startDate?: string; // ISO datetime
+  endDate?: string;   // ISO datetime
 }
 
 export interface ICalendarCell {

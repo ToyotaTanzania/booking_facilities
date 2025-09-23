@@ -5,7 +5,7 @@ import { format, differenceInMinutes, parseISO } from "date-fns";
 
 import { useCalendar } from "@/calendar/contexts/calendar-context";
 
-import { DraggableEvent } from "@/calendar/components/dnd/draggable-event";
+// import { DraggableEvent } from "@/calendar/components/dnd/draggable-event";
 import { EventDetailsDialog } from "@/calendar/components/dialogs/event-details-dialog";
 
 import { cn } from "@/lib/utils";
@@ -14,6 +14,10 @@ import type { HTMLAttributes } from "react";
 import type { IEvent } from "@/calendar/interfaces";
 import type { VariantProps } from "class-variance-authority";
 import { User, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { api } from "@/trpc/react";
+import { useSession } from "next-auth/react";
 
 const calendarWeekEventCardVariants = cva(
   "flex select-none flex-col gap-0.5 truncate whitespace-nowrap rounded-md border px-2 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
@@ -63,25 +67,61 @@ interface IProps
 }
 
 export function EventBlock({ event, className }: IProps) {
-  const { badgeVariant } = useCalendar();
+  const { badgeVariant, responsibles, setLocalEvents } = useCalendar();
+  const { data: session } = useSession();
 
   console.log(event);
 
-  const start = parseISO(event.startDate);
-  const end = parseISO(event.endDate);
+  const startStr = String(event.startDate ?? event.start);
+  const endStr = String(event.endDate ?? event.end);
+  const start = parseISO(startStr);
+  const end = parseISO(endStr);
   const durationInMinutes = differenceInMinutes(end, start);
-  const heightInPixels = (durationInMinutes / 60) * 96 - 8;
+  const heightInPixels = (durationInMinutes / 60) * 160 - 8;
 
+  const baseColor: string = event.color
+    ? String(event.color)
+    : ["approved", "confirmed"].includes(event.status)
+      ? "green"
+      : ["rejected", "cancelled"].includes(event.status)
+        ? "red"
+        : "yellow";
   const color = (
-    badgeVariant === "dot" ? `${event.color}-dot` : event.color
+    badgeVariant === "dot" ? `${baseColor}-dot` : baseColor
   ) as VariantProps<typeof calendarWeekEventCardVariants>["color"];
 
   const calendarWeekEventCardClasses = cn(
     calendarWeekEventCardVariants({ color, className }),
     durationInMinutes < 35 && "py-0 justify-center",
     'rounded-xs', 
-    "cursor-pointer"
+    "cursor-pointer",
+    "relative",
+    "min-h-[120px]"
   );
+
+  // Helpers
+  const getId = (value: number | { id: number } | undefined): number | undefined => {
+    if (typeof value === "number") return value;
+    if (value && typeof value === "object" && "id" in value) return value.id;
+    return undefined;
+  };
+
+  const facilityId = getId(event.facility);
+  const slotId = getId(event.slot as unknown as { id: number } | number | undefined) ?? (typeof event.slot === "number" ? event.slot : undefined);
+  const scheduleId = getId(event.schedule as unknown as { id: number } | number | undefined) ?? (typeof event.schedule === "number" ? event.schedule : undefined);
+  const dateStr = typeof event.date === "string" ? event.date : new Date(event.date).toISOString();
+
+  // Mutations
+  const { mutate: acceptBooking, isPending: isAccepting } = api.booking.accept.useMutation({
+    onSuccess: () => {
+      setLocalEvents(prev => prev.map(e => e.id === event.id ? { ...e, status: "approved" } : e));
+    },
+  });
+  const { mutate: rejectBooking, isPending: isRejecting } = api.booking.reject.useMutation({
+    onSuccess: () => {
+      setLocalEvents(prev => prev.map(e => e.id === event.id ? { ...e, status: "rejected" } : e));
+    },
+  });
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -100,6 +140,16 @@ export function EventBlock({ event, className }: IProps) {
           style={{ height: `${heightInPixels}px` }}
           onKeyDown={handleKeyDown}
         >
+          {/* <Badge
+            variant={
+              ["rejected", "cancelled"].includes(event.status) ? "destructive" :
+              ["approved", "confirmed"].includes(event.status) ? "default" :
+              "secondary"
+            }
+            className="absolute right-1 top-1 z-10 px-1.5 py-0.5 text-[10px] capitalize"
+          >
+            {event.status}
+          </Badge> */}
           {/* <div className="flex items-center gap-1.5 truncate">
             {["mixed", "dot"].includes(badgeVariant) && (
               <svg width="8" height="8" viewBox="0 0 8 8" className="event-dot shrink-0">
@@ -130,14 +180,8 @@ export function EventBlock({ event, className }: IProps) {
               )}
 
               <div className="flex justify-between">
-                <span className="font-medium">{event.title}</span>
-                <span className="font-medium capitalize">{event.status}</span>
+                <span className="font-medium">{event.title ?? "Booking"}</span>
               </div>
-            </div>
-
-            <div className="mt-1 flex items-center gap-1">
-              <User className="size-3 shrink-0" />
-              <p className="text-foreground text-xs">{event.user.name}</p>
             </div>
 
             <div className="flex items-center gap-1">
@@ -147,10 +191,52 @@ export function EventBlock({ event, className }: IProps) {
               </p>
             </div>
 
+            {/* Facility / Building / Location */}
+            <div className="flex flex-col gap-0.5">
+              {typeof event.facility === "object" && (
+                <p className="text-foreground text-xs">Facility: {event.facility.name}</p>
+              )}
+              {typeof event.facility === "object" && typeof event.facility.building !== "undefined" && (
+                <>
+                  {typeof event.facility.building === "object" && (
+                    <>
+                      {typeof event.facility.building.location === "object" && (
+                        <p className="text-foreground text-xs">Location: {event.facility.building.location.name}</p>
+                      )}
+                      {typeof event.facility.building.location === "string" && (
+                        <p className="text-foreground text-xs">Location: {event.facility.building.location}</p>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
             <div className="flex items-center gap-1">
               {/* <Text className="size-3 shrink-0" /> */}
               <p className="text-foreground text-xs">{event.description}</p>
             </div>
+
+            {/* Actions for responsible user when pending */}
+            {(() => {
+              type Responsible = { user: string; facility: number | { id: number } };
+              const responsiblesList = (responsibles ?? []) as Responsible[];
+              const responsible = responsiblesList.find(r => getId(r.facility) === facilityId);
+              const currentUserId: string | undefined = (session as unknown as { supabase?: { sub?: string } } | null)?.supabase?.sub;
+              const canModerate = event.status === "pending" && Boolean(currentUserId) && responsible?.user === currentUserId;
+
+              if (!canModerate || !facilityId || !slotId) return null;
+              return (
+                <div className="mt-1 flex items-center justify-end gap-2">
+                  <Button size="sm" variant="secondary" disabled={isRejecting} onClick={() => rejectBooking({ facility: facilityId, date: dateStr, slot: slotId, comment: "" })}>
+                    Reject
+                  </Button>
+                  <Button size="sm" disabled={isAccepting} onClick={() => acceptBooking({ facility: facilityId, date: dateStr, slot: slotId, schedule: scheduleId ?? 0, comment: event.description ?? "" })}>
+                    Approve
+                  </Button>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </EventDetailsDialog>

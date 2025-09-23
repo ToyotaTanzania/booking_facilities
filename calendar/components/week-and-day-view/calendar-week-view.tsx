@@ -4,9 +4,7 @@ import { useCalendar } from "@/calendar/contexts/calendar-context";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { AddEventDialog } from "@/calendar/components/dialogs/add-event-dialog";
 import { EventBlock } from "@/calendar/components/week-and-day-view/event-block";
-import { DroppableTimeBlock } from "@/calendar/components/dnd/droppable-time-block";
 import { CalendarTimeline } from "@/calendar/components/week-and-day-view/calendar-time-line";
 import { WeekViewMultiDayEventsRow } from "@/calendar/components/week-and-day-view/week-view-multi-day-events-row";
 
@@ -22,7 +20,7 @@ interface IProps {
 
 export function CalendarWeekView({ singleDayEvents, multiDayEvents }: IProps) {
 
-  const { selectedDate, workingHours, visibleHours, responsibles } = useCalendar();
+  const { selectedDate, workingHours, visibleHours } = useCalendar();
 
   const { hours, earliestEventHour, latestEventHour } = getVisibleHours(visibleHours, singleDayEvents);
 
@@ -61,7 +59,7 @@ export function CalendarWeekView({ singleDayEvents, multiDayEvents }: IProps) {
             {/* Hours column */}
             <div className="relative w-18">
               {hours.map((hour, index) => (
-                <div key={hour} className="relative" style={{ height: "96px" }}>
+                <div key={hour} className="relative" style={{ height: "160px" }}>
                   <div className="absolute -top-3 right-2 flex h-6 items-center">
                     {index !== 0 && <span className="text-xs text-muted-foreground">{format(new Date().setHours(hour, 0, 0, 0), "hh a")}</span>}
                   </div>
@@ -71,9 +69,12 @@ export function CalendarWeekView({ singleDayEvents, multiDayEvents }: IProps) {
 
             {/* Week grid */}
             <div className="relative flex-1 border-l">
-              <div className="grid grid-cols-7 divide-x">
+              <div className="grid grid-cols-7 divide-x ">
                 {weekDays.map((day, dayIndex) => {
-                  const dayEvents = singleDayEvents.filter(event => isSameDay(parseISO(event.startDate), day) || isSameDay(parseISO(event.endDate), day));
+                  const dayEvents = singleDayEvents.filter(event =>
+                    isSameDay(parseISO(String(event.startDate ?? event.start)), day) ||
+                    isSameDay(parseISO(String(event.endDate ?? event.end)), day)
+                  );
                   const groupedEvents = groupEvents(dayEvents);
 
                   return (
@@ -82,18 +83,18 @@ export function CalendarWeekView({ singleDayEvents, multiDayEvents }: IProps) {
                         const isDisabled = !isWorkingHour(day, hour, workingHours);
 
                         return (
-                          <div key={hour} className={cn("relative", isDisabled && "bg-calendar-disabled-hour")} style={{ height: "96px" }}>
+                          <div key={hour} className={cn("relative", isDisabled && "bg-calendar-disabled-hour")} style={{ height: "160px" }}>
                             {index !== 0 && <div className="pointer-events-none absolute inset-x-0 top-0 border-b"></div>}
 
                             {/* <DroppableTimeBlock date={day} hour={hour} minute={0}>
                               <AddEventDialog startDate={day} startTime={{ hour, minute: 0 }}>
-                                <div className="absolute inset-x-0 top-0 h-[24px] cursor-pointer transition-colors hover:bg-accent" />
+                                <div className="absolute inset-x-0 top-0 h-[40px] cursor-pointer transition-colors hover:bg-accent" />
                               </AddEventDialog>
                             </DroppableTimeBlock> */}
 
                             {/* <DroppableTimeBlock date={day} hour={hour} minute={15}>
                               <AddEventDialog startDate={day} startTime={{ hour, minute: 15 }}>
-                                <div className="absolute inset-x-0 top-[24px] h-[24px] cursor-pointer transition-colors hover:bg-accent" />
+                                <div className="absolute inset-x-0 top-[40px] h-[40px] cursor-pointer transition-colors hover:bg-accent" />
                               </AddEventDialog>
                             </DroppableTimeBlock> */}
 
@@ -101,13 +102,13 @@ export function CalendarWeekView({ singleDayEvents, multiDayEvents }: IProps) {
 
                             {/* <DroppableTimeBlock date={day} hour={hour} minute={30}>
                               <AddEventDialog startDate={day} startTime={{ hour, minute: 30 }}>
-                                <div className="absolute inset-x-0 top-[48px] h-[24px] cursor-pointer transition-colors hover:bg-accent" />
+                                <div className="absolute inset-x-0 top-[80px] h-[40px] cursor-pointer transition-colors hover:bg-accent" />
                               </AddEventDialog>
                             </DroppableTimeBlock> */}
 
                             {/* <DroppableTimeBlock date={day} hour={hour} minute={45}>
                               <AddEventDialog startDate={day} startTime={{ hour, minute: 45 }}>
-                                <div className="absolute inset-x-0 top-[72px] h-[24px] cursor-pointer transition-colors hover:bg-accent" />
+                                <div className="absolute inset-x-0 top-[120px] h-[40px] cursor-pointer transition-colors hover:bg-accent" />
                               </AddEventDialog>
                             </DroppableTimeBlock> */}
                           </div>
@@ -122,16 +123,16 @@ export function CalendarWeekView({ singleDayEvents, multiDayEvents }: IProps) {
                               otherIndex !== groupIndex &&
                               otherGroup.some(otherEvent =>
                                 areIntervalsOverlapping(
-                                  { start: parseISO(event.startDate), end: parseISO(event.endDate) },
-                                  { start: parseISO(otherEvent.startDate), end: parseISO(otherEvent.endDate) }
+                                  { start: parseISO(String(event.startDate ?? event.start)), end: parseISO(String(event.endDate ?? event.end)) },
+                                  { start: parseISO(String(otherEvent.startDate ?? otherEvent.start)), end: parseISO(String(otherEvent.endDate ?? otherEvent.end)) }
                                 )
                               )
                           );
 
-                          if (!hasOverlap) style = { ...style, width: "100%", left: "0%" };
+                          // if (!hasOverlap) style = { ...style, width: "100%", left: "0%" };
 
                           return (
-                            <div key={event.id} className="absolute p-1" style={style}>
+                            <div key={String(event.id)} className="absolute p-1" style={style}>
                               <EventBlock event={event} />
                             </div>
                           );
