@@ -8,6 +8,7 @@ import Providers from "./providers";
 import { cn } from "@/lib/utils";
 import { env } from "@/env";
 
+
 export const metadata: Metadata = {
   title: {
     template: "%s | Meeting Hub",

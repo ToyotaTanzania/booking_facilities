@@ -9,6 +9,8 @@ import { DataTable } from "../../_components/data-table";
 import { columns, type LocationColumn } from "./columns";
 import { LocationModal } from "./location-modal";
 import { api } from "@/trpc/react";
+import { AgGridReact } from "ag-grid-react";
+
 
 export function LocationClient() {
   const [open, setOpen] = useState(false);
@@ -36,11 +38,21 @@ export function LocationClient() {
         </Button>
       </div>
       <Separator />
-      <DataTable
+      {/* <DataTable
         columns={columns(onEdit)}
         data={locations ?? []}
         searchKey="name"
-      />
+      /> */}
+
+      <div style={{ height: 500 }}>
+          <AgGridReact
+              rowData={locations ?? []}
+              columnDefs={[
+                { field: "name" },
+                { field: "address" },
+            ]}
+          />
+      </div>
       <LocationModal
         isOpen={open}
         onClose={() => {
