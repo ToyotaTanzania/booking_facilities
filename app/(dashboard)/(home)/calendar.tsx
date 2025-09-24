@@ -7,6 +7,7 @@ import { api } from "@/trpc/react";
 import type { IEvent } from "@/calendar/interfaces";
 import { useMedia } from "react-use";
 import { Loader2 } from "lucide-react";
+import { SignOutButton } from "@/app/auth/signin/signout";
 
 interface BookingData {
   id: number;
@@ -124,19 +125,24 @@ export function BookingsCalendar() {
     [];
 
   return (
-    <CalendarProvider
-      className="w-full"
-      users={
-        users?.map((user: UserData) => ({
-          id: user.userid,
-          name: user.name,
-          picturePath: user.avatar_url,
-        })) ?? []
-      }
-      persons={persons ?? []}
-      events={events}
-    >
-      <ClientContainer view={state ? "agenda" : "week"} />
-    </CalendarProvider>
+    <>
+      <CalendarProvider
+        className="w-full"
+        users={
+          users?.map((user: UserData) => ({
+            id: user.userid,
+            name: user.name,
+            picturePath: user.avatar_url,
+          })) ?? []
+        }
+        persons={persons ?? []}
+        events={events}
+      >
+        <ClientContainer view={state ? "agenda" : "week"} />
+      </CalendarProvider>
+      <div className="absolute top-4 right-4 z-50">
+        <SignOutButton />
+      </div>
+    </>
   );
 }

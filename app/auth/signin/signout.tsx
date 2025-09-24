@@ -7,7 +7,7 @@ export function SignOutButton() {
   return (
     <Button
       variant="destructive"
-      className="cursor-pointer"
+      className="cursor-pointer w-full"
       onClick={async () => {
         const supabase = createSupabaseBrowserClient();
         await supabase.auth.signOut(); // clears browser session

@@ -21,9 +21,7 @@ export default async function DashboardLayout({
   return (
     <div className="relative flex min-h-screen">
       {role === "admin" && <Sidebar />}
-      <div className="absolute top-4 right-4 z-50"> 
-        <SignOutButton />
-      </div>
+      
       <main className="flex-1 overflow-y-auto bg-muted/10 pb-16">
         <div className="flex-1 space-y-4 p-2">
           {/* <CheckAuth />  */}

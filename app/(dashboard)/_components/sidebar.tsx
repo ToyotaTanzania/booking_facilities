@@ -8,50 +8,57 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
-  LayoutDashboard,
-  ListTodo,
   MapPin,
   Settings,
   Users,
   Calendar,
   Clock,
+  Factory,
+  Layers,
+  UserCircle,
+  UserSquare,
+  CalendarCheck,
+  CalendarRange,
+  CircleAlert,
+  UserCog,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { SignOutButton } from "@/app/auth/signin/signout";
 
 const routes = [
   {
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    href: "",
+    label: "Home",
+    icon: Home,
+    href: "/",
   },
   {
     label: "Manage",
-    icon: Home,
+    icon: Settings,
     children: [
-      {
-        label: "Dashboard",
-        icon: Home,
-        href: "/",
-      },
+      // {
+      //   label: "Reports",
+      //   icon: BarChart3,
+      //   href: "/",
+      // },
       {
         label: "Locations",
-        icon: ListTodo,
+        icon: MapPin,
         href: "/locations",
       },
       {
         label: "Buildings",
-        icon: ListTodo,
+        icon: Building2,
         href: "/buildings",
       },
       {
         label: "Facility Types",
-        icon: ListTodo,
+        icon: Layers,
         href: "/facility-types",
       },
       {
         label: "Facilities",
-        icon: Home,
+        icon: Factory,
         href: "/facilities",
       },
       {
@@ -63,7 +70,7 @@ const routes = [
   },
   {
     label: "User Management",
-    icon: Users,
+    icon: UserCog,
     children: [
       {
         label: "All Users",
@@ -72,33 +79,33 @@ const routes = [
       },
       {
         label: "User Profiles",
-        icon: Users,
+        icon: UserCircle,
         href: "/users/profiles",
       },
       {
         label: "Staff Directory",
-        icon: Users,
+        icon: UserSquare,
         href: "/users/staff",
       },
     ],
   },
   {
     label: "Bookings",
-    icon: Home,
+    icon: Calendar,
     children: [
       {
         label: "All Bookings",
-        icon: ListTodo,
+        icon: CalendarCheck,
         href: "/bookings",
       },
       {
         label: "My Bookings",
-        icon: ListTodo,
+        icon: CalendarRange,
         href: "/bookings/my-bookings",
       },
       {
         label: "Pending Approvals",
-        icon: ListTodo,
+        icon: CircleAlert,
         href: "/bookings/pending",
       },
     ],
@@ -204,6 +211,9 @@ export function Sidebar() {
             )}
           </div>
         ))}
+      </div>
+      <div className="mt-auto p-3 border-t border-border">
+        <SignOutButton />
       </div>
     </div>
   );
