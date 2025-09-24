@@ -15,6 +15,7 @@ import { auth } from "@/server/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { mailer } from "@/lib/mailer";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 /**
  * 1. CONTEXT
@@ -32,10 +33,12 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   const session = await auth();
   const serverDB = await createSupabaseServerClient()
   const clientDB = await createSupabaseBrowserClient();
+  const admin = await  createSupabaseAdminClient();
 
   return {
     supabase: serverDB,
     client: clientDB,
+    admin: admin,
     session,
     mailer,
     ...opts,

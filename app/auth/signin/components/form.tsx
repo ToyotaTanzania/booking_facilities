@@ -29,6 +29,7 @@ import {
 import { useMount } from "react-use";
 import { toast } from "sonner";
 import { api } from "@/trpc/react";
+import Link from "next/link";
 
 // Form validation schema
 const loginFormSchema = z.object({
@@ -181,6 +182,13 @@ export function LoginForm() {
                 {isSearching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isTokenSent ? "Verify Code" : "Sign In with Email"}
               </Button>
+              {/* <Button type="submit" className="cursor-pointer w-full" disabled={isSearching}>
+                {isSearching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isTokenSent ? "Verify Code" : "Sign In with Email"}
+              </Button> */}
+              <div>
+                <span className="font-xs">Dont have an account?{" "}</span> <Link href="/auth/signup" className="text-sm underline">Sign Up</Link>
+              </div>
             </form>
           </Form>
         </CardContent>

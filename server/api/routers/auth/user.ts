@@ -8,7 +8,6 @@ import {
 } from "@/server";
 
 export const userRouter = createTRPCRouter({
-
   getUsers: publicProcedure.query(async ({ ctx }) => {
     const { data, error } = await ctx.supabase.from("profiles").select("*");
     if (error) {
@@ -16,6 +15,75 @@ export const userRouter = createTRPCRouter({
     }
     return data;
   }),
+
+  create: publicProcedure
+    .input(
+      z.object({
+        email: z.string(),
+        name: z.string(),
+        phone: z.string().nullable().optional(),
+        legal_entity: z.string().nullable().optional(),
+        division: z.string().nullable().optional(),
+        role: z.string().nullable().optional(),
+        segment: z.string().nullable().optional(),
+        token: z.string().nullable().optional(),
+        unit: z.string().nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+
+      const { email, name, phone, legal_entity, division, role, segment, unit } = input
+
+      const { data, error } = await ctx.supabase
+        .from("profiles")
+        .select("*")
+        .eq("email", email)
+        .maybeSingle();
+
+      if(data){
+        throw new Error("User already exists");
+      }
+
+      const { data: signup, error: signupError } = await ctx.admin.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: { name },
+      });
+
+      if (signupError) {
+        throw new Error(signupError.message);
+      }
+      
+      const { data: profile, error: profileError } = await ctx.supabase
+        .from("profiles")
+        .insert({
+          userid: signup.user.id,
+          email,
+          name,
+          phone,
+          legal_entity,
+          division,
+          role: "user",
+          segment,
+          unit
+        })
+        .select()
+        .maybeSingle();
+
+      if (profileError) {
+        await ctx.admin.auth.admin.deleteUser(signup.user.id);
+        throw new Error(profileError.message);
+      }
+
+      await ctx.supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${env.NEXTAUTH_URL}/auth/callback`,
+        },
+      });
+
+      return profile;
+    }),
 
   hello: protectedProcedure.query(async ({ input, ctx }) => {
     const { data } = await ctx.supabase.from("users").select("*");
@@ -41,14 +109,13 @@ export const userRouter = createTRPCRouter({
       return data;
     }),
 
-    getAll: protectedProcedure
-    .query(async ({ ctx }) => {
-      const { data, error } = await ctx.supabase.from("profiles").select("*");
-      if (error) {
-        throw new Error(error.message);
-      }
-      return data;
-    }),
+  getAll: protectedProcedure.query(async ({ ctx }) => {
+    const { data, error } = await ctx.supabase.from("profiles").select("*");
+    if (error) {
+      throw new Error(error.message);
+    }
+    return data;
+  }),
 
   signin: publicProcedure
     .input(
@@ -101,7 +168,6 @@ export const userRouter = createTRPCRouter({
       };
     }),
 
-
   // Update user
   update: protectedProcedure
     .input(
@@ -113,39 +179,43 @@ export const userRouter = createTRPCRouter({
         status: z.string().optional(),
         phone: z.string().nullable().optional(),
         department: z.string().nullable().optional(),
-        profile: z.object({
-          name: z.string().min(1, "Name is required").optional(),
-          phone: z.string().nullable().optional(),
-          unit: z.string().nullable().optional(),
-          segment: z.string().nullable().optional(),
-          division: z.string().nullable().optional(),
-          legal_entity: z.string().nullable().optional(),
-          isActive: z.boolean().optional(),
-          role: z.string().nullable().optional(),
-        }).optional(),
+        profile: z
+          .object({
+            name: z.string().min(1, "Name is required").optional(),
+            phone: z.string().nullable().optional(),
+            unit: z.string().nullable().optional(),
+            segment: z.string().nullable().optional(),
+            division: z.string().nullable().optional(),
+            legal_entity: z.string().nullable().optional(),
+            isActive: z.boolean().optional(),
+            role: z.string().nullable().optional(),
+          })
+          .optional(),
       }),
     )
-    .mutation(async ({ ctx, input }) => { 
-      
-      const { data, error } = await ctx.supabase.from('profile').update({
-        name: input.profile?.name,
-        phone: input.profile?.phone,
-        unit: input.profile?.unit,
-        segment: input.profile?.segment,
-        division: input.profile?.division,
-        legal_entity: input.profile?.legal_entity,
-        isActive: input.profile?.isActive,
-        role: input.profile?.role,
-        email: input.email,
-        updated_at: new Date().toISOString(),
-      }).eq('id', input.id).select().maybeSingle()
+    .mutation(async ({ ctx, input }) => {
+      const { data, error } = await ctx.supabase
+        .from("profile")
+        .update({
+          name: input.profile?.name,
+          phone: input.profile?.phone,
+          unit: input.profile?.unit,
+          segment: input.profile?.segment,
+          division: input.profile?.division,
+          legal_entity: input.profile?.legal_entity,
+          isActive: input.profile?.isActive,
+          role: input.profile?.role,
+          email: input.email,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", input.id)
+        .select()
+        .maybeSingle();
 
-      if(error){ 
+      if (error) {
         throw new Error(error.message);
       }
 
       return data;
-
-    })
-  
+    }),
 });
