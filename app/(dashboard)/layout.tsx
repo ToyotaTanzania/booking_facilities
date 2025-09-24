@@ -18,6 +18,8 @@ export default async function DashboardLayout({
   const supaSession = session as SupabaseSession;
   const role = supaSession.supabase?.role;
 
+  console.log("User Role:", session);
+
   return (
     <div className="relative flex min-h-screen">
       {role === "admin" && <Sidebar />}
