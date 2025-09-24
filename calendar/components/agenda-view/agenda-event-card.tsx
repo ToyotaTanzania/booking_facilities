@@ -78,10 +78,6 @@ export function AgendaEventCard({
   eventTotalDays,
 }: IProps) {
   const { badgeVariant } = useCalendar();
-
-  console.log("agenda event");
-  console.log(event);
-
   const startDate = parseISO(event.startDate);
   const endDate = parseISO(event.endDate);
 

@@ -8,10 +8,6 @@ interface RescheduleProps {
 
 export const CancelEvent = ({ event }: RescheduleProps) => {
 
-  console.log("cancel event");
-  console.log(event)
-
-
   const [count, setCount] = useState(0);
   return (
     <div className="p-4">

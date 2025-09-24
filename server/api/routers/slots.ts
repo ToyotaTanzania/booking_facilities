@@ -92,8 +92,6 @@ export const slotsRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
 
-      console.log(input);
-      
       await ctx.supabase
         .from('slots')
         .delete()

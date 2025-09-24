@@ -61,8 +61,6 @@ export function EventDetailsDialog({ event, children }: IProps) {
     return undefined;
   };
 
-  console.log("EventDetailsDialog event:", event);
-
   const scheduleId = getId(event?.schedule);
   const [schedule, setSchedule] = useState<string>(
     scheduleId ? String(scheduleId) : "",
@@ -104,8 +102,7 @@ export function EventDetailsDialog({ event, children }: IProps) {
   });
 
   useEffect(() => {
-    console.log("Changes happened", event);
-    const newScheduleId = getId(
+   const newScheduleId = getId(
       event?.schedule as number | ISchedule | undefined,
     );
     setSchedule(newScheduleId ? String(newScheduleId) : "");
@@ -122,7 +119,7 @@ export function EventDetailsDialog({ event, children }: IProps) {
   }, [event, form]);
 
   const onSubmit = (_values: TEventFormData) => {
-    console.log("Form submitted:", _values);
+
   };
 
   return (

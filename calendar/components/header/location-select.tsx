@@ -13,7 +13,6 @@ export function LocationSelect() {
   const { selectLocationId, setSelectLocationId } = useCalendar();
   const { data: locations } = api.location.list.useQuery() as { data: Location[] };
 
-  console.log(locations);
 
   return (
     <Select value={selectLocationId} onValueChange={(value) => setSelectLocationId(value)}>

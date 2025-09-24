@@ -155,7 +155,7 @@ export function AddEventDialog({ children, startDate }: IProps) {
   }, [startDate, form]);
 
   useMount(() => {
-    // console.log(session);
+   
   });
 
   return (
@@ -200,8 +200,6 @@ export function AddEventDialog({ children, startDate }: IProps) {
 
                   <Select
                     onValueChange={(value: string) => {
-                      console.log(value);
-
                       field.onChange(value);
 
                       setSchedule(value.split(",")[1] ?? "");

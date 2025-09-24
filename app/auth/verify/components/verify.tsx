@@ -86,7 +86,6 @@ export function OTPVerificationForm() {
             redirect: false,
           });
 
-          console.log(res);
         }
       },
       onError: (error) => {
@@ -107,8 +106,6 @@ export function OTPVerificationForm() {
 
   // Check authentication status and redirect accordingly
   useEffect(() => {
-    console.log(status);
-    console.log(session);
     if (status === "authenticated") {
       router.push("/");
     }

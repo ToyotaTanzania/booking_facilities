@@ -57,7 +57,6 @@ export function CreateSchedule({
 
   const { mutate: createSchedule, isPending } = api.schedule.createWithSlots.useMutation({
     onSuccess: (data) => {
-      console.log("Schedule created successfully with slots:", data);
       toast.success("Schedule created successfully with all slots");
       onClose();
       form.reset();
@@ -73,11 +72,9 @@ export function CreateSchedule({
   // const { mutate: createSlots, isPending: isCreatingSlots } = api.slots.createMultiple.useMutation({...});
 
   const onSubmit = (data: CreateScheduleValues) => {
-    console.log("Form submitted with data:", data);
     
     // Check if form is valid
     if (!form.formState.isValid) {
-      console.log("Form validation errors:", form.formState.errors);
       toast.error("Please fix form validation errors");
       return;
     }
@@ -101,7 +98,6 @@ export function CreateSchedule({
       return;
     }
 
-    console.log("Creating schedule with slots:", data);
     createSchedule({ 
       name: data.name,
       slots: data.slots 
@@ -230,7 +226,6 @@ export function CreateSchedule({
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  console.log("Testing API connection...");
                   createSchedule({ name: "Test Schedule", slots: [{ start: "07:00", end: "07:30", size: 1 }] });
                 }}
                 disabled={isPending}

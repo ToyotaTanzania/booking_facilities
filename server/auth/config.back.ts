@@ -57,8 +57,6 @@ export const authConfig = {
         refresh_token: { label: "Refresh Token", type: "text" },
       },
       async authorize(credentials, request) {
-           console.log(request)
-          console.log(credentials)
 
           return {
             id: "feisal",
@@ -149,18 +147,7 @@ export const authConfig = {
   }),
   callbacks: {
     async jwt({ token, user, account }) {
-      console.log("*******jwt*******")
-      console.log("----[TOKEN Start]-----")
-      console.log(token)
-      console.log("----[TOKEN End]-----")
-      console.log("----[ USER  Start ]-----")
-      console.log(user)
-      console.log("----[ USER  End ]-----")
-      console.log("----[ ACCOUNT  Start ]-----")
-      console.log(account)
-      console.log("----[ ACCOUNT  End ]-----")
-      console.log("*******jwt*******")
-
+ 
       if (account && user) {
         return {
           ...token,
@@ -171,14 +158,7 @@ export const authConfig = {
       return token;
     },
     async session({ session, token }) {
-      console.log("*******session*******")
-      console.log("----[SESSION Start]-----")
-      console.log(session)
-      console.log("----[SESSION End]-----")
-      console.log("----[TOKEN Start]-----")
-      console.log(token)
-      console.log("----[TOKEN End]-----")
-      
+  
       if (token) {
         session.user = token.user as any;
         session.accessToken = token.accessToken as string;

@@ -86,7 +86,6 @@ export const Approve = ({
     try {
       switch (action) {
         case 'approve':
-          console.log('Approving booking:', { booking, reason });
           approveBooking({
             slot: booking.slot as number,
             facility: booking.facility as number,

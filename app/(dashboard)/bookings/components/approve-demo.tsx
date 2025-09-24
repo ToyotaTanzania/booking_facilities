@@ -32,20 +32,17 @@ export function ApproveDemo() {
   const [showModal, setShowModal] = useState(false);
 
   const handleApprove = async (booking: any, reason?: string) => {
-    console.log('Approving booking:', { booking, reason });
     // TODO: Implement actual approval logic
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
   };
 
   const handleReject = async (booking: any, reason: string) => {
-    console.log('Rejecting booking:', { booking, reason });
     // TODO: Implement actual rejection logic
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
   };
 
   const handleChangeUser = async (booking: any, newUserId: string, reason: string) => {
-    console.log('Changing user for booking:', { booking, newUserId, reason });
-    // TODO: Implement actual user change logic
+ // TODO: Implement actual user change logic
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
   };
 

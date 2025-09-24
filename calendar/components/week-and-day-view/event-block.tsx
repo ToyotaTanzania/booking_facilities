@@ -70,7 +70,6 @@ export function EventBlock({ event, className }: IProps) {
   const { badgeVariant, responsibles, setLocalEvents } = useCalendar();
   const { data: session } = useSession();
 
-  console.log(event);
 
   const startStr = String(event.startDate ?? event.start);
   const endStr = String(event.endDate ?? event.end);

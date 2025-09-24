@@ -32,7 +32,6 @@ export const bookingRouter = createTRPCRouter({
         })))
 
         if (error) {
-          console.log(error)
           throw new Error(error.message)
         }
 

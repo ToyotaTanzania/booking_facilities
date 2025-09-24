@@ -120,7 +120,6 @@ export function DailyCalendar({
 
   // Handle booking confirmation
   const handleConfirmBooking = async () => {
-    console.log("handleConfirmBooking", selectedSlots)
     try {
       const selectedSlotsData = getSelectedSlotsData();
 

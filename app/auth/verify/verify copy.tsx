@@ -76,7 +76,6 @@ export function OTPVerificationForm() {
         redirect: false,
       });
 
-      console.log(result);
 
       if(result?.error) {
         toast.error("Failed to verify code");

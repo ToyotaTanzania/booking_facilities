@@ -84,11 +84,8 @@ export function UpdateSchedule({
 
   const { mutate: updateSchedule, isPending } = api.schedule.update.useMutation({
     onSuccess: (data) => {
-      console.log("Schedule updated successfully:", data);
       toast.success("Schedule updated successfully");
       onClose();
-      console.log(data);
-      console.log(form.getValues("slots"));
       form.reset();
       void utils.schedule.list.invalidate();
     },
@@ -99,7 +96,6 @@ export function UpdateSchedule({
   });
 
   const onSubmit = (values: UpdateScheduleValues) => {
-    console.log("Updating schedule with values:", values);
     updateSchedule({
       id: data.id,
       name: values.name,

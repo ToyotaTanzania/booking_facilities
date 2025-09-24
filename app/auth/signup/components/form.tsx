@@ -97,7 +97,6 @@ export function SignupForm() {
 
   const onSubmit = async (data: LoginFormValues) => {
 
-    // console.log("Form Data: ", data);
     // if (isSearching) {
     //   toast.error("Please wait for the previous request to complete");
     //   return;

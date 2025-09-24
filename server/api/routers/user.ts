@@ -323,7 +323,6 @@ export const userRouter = createTRPCRouter({
           },
         });
 
-        console.log(result);
 
         if(result.error){
           throw new Error(result.error.message);
@@ -341,7 +340,6 @@ export const userRouter = createTRPCRouter({
         throw new Error('Not authenticated');
       }
 
-      console.log(ctx.session);
 
       const { data, error } = await ctx.supabase
         .from('profiles')
@@ -361,7 +359,6 @@ export const userRouter = createTRPCRouter({
 
     const { data, error } = await ctx.supabase.auth.getUser();
 
-    console.log(data);
 
     if (error) throw error;
     return { user: data.user }  ;

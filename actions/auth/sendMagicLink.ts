@@ -16,7 +16,5 @@ export async function sendMagicLink(formData: FormData) {
     },
   });
 
-  console.log(result)
-
   if (result.error) throw result.error;
 }
