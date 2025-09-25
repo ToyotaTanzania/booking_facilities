@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { BookingForm } from '../../bookings/components/booking'
+import { BookingForm } from '../../bookings.back/components/booking'
 import { AddEventDialog } from '@/calendar/components/dialogs/add-event-dialog'
 import { Plus } from 'lucide-react'
 

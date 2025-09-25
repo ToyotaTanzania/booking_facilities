@@ -1,12 +1,25 @@
-import { BookingsList } from "./components";
-import { BookingPreview } from "./components/preview";
+import { auth } from "@/server/auth";
+import { api } from "@/trpc/server";
+// import { redirect } from "next/navigation";
+import type { Session } from "next-auth";
+import * as _ from "lodash";
 
-export default function BookingsPage() {
+export default async function BookingsPage() {
+
+  const  rooms = await api.responsiblePerson.getMyRooms()
+
   return (
     <div>
-      <BookingsList />
       <div className="flex flex-col gap-4 pt-8">
-        <BookingPreview />
+        { 
+            _.isEmpty(rooms) ? 
+            (
+            <div> 
+
+            </div>
+            ) :
+            (<div> Responsible User </div>)
+          }
       </div>
     </div>
   );

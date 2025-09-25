@@ -1,25 +1,19 @@
 import { z } from 'zod';
-import { createTRPCRouter, protectedProcedure } from '@/server'; 
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server'; 
 
 export const responsiblePersonRouter = createTRPCRouter({
-  list: protectedProcedure
-    .input(z.object({
-      facility: z.number().optional(),
-    }).optional())
-    .query(async ({ ctx, input }) => {
-      let query = ctx.supabase
-        .from('responsible_person')
-        .select('*, facility(*)');
 
-      if (input?.facility) {
-        query = query.eq('facility', input.facility);
-      }
-
-      const { data, error } = await query;
+  getMyRooms: protectedProcedure
+  .query(async ({ ctx }) => { 
+      const { data, error } = await ctx.supabase.from("responsible_person")
+      .select(`*`)
+      .eq("user", ctx.session?.supabase?.id)
 
       if (error) throw error;
-      return data;
-    }),
+
+      return data || [];
+
+  }),
 
   getById: protectedProcedure
     .input(z.number())
