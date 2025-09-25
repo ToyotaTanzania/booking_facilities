@@ -9,8 +9,7 @@ export const scheduleRouter = createTRPCRouter({
         .from('schedule')
         .select(`
           *,
-          slots:slots!schedule(*),
-          facility:facilities(name)
+          slots:slots!schedule(*)
         `)
         .order('name');
 
@@ -55,8 +54,7 @@ export const scheduleRouter = createTRPCRouter({
         .from('schedule')
         .select(`
           *,
-          slots:slots!schedule(*),
-          facility:facilities(name)
+          slots:slots!schedule(*)
         `)
         .eq('id', input)
         .single();
