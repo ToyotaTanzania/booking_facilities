@@ -11,8 +11,10 @@ import { UpdateFacility } from "./update-facility";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/modals/confirm-modal";
+import { AssignResponsiblePersonModal } from "./assign-responsible-person-modal";
+import { AssignScheduleModal } from "./assign-schedule-modal";
 
-import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'; 
+import { AllCommunityModule, ModuleRegistry, type ValueGetterParams } from 'ag-grid-community'; 
 ModuleRegistry.registerModules([AllCommunityModule]);
 import { AgGridReact } from 'ag-grid-react';
 
@@ -81,18 +83,70 @@ export function FacilitiesList() {
       </div>
       <Separator />
       <div style={{ height: 500 }}>
-        <AgGridReact
+        <AgGridReact<FacilityColumn>
           rowData={facilities ?? []}
           suppressCellFocus={true}
           defaultColDef={{ flex: 1, minWidth: 150, sortable: true, filter: true, resizable: true }}
           columnDefs={[
             { headerName: "Name", field: "name" },
-            { headerName: "Type", valueGetter: (p: any) => p.data?.type?.name ?? '-' },
-            { headerName: "Building", valueGetter: (p: any) => p.data?.building?.name ?? '-' },
+            { headerName: "Type", valueGetter: (p: ValueGetterParams<FacilityColumn, string>) => p.data?.type?.name ?? '-' },
+            { headerName: "Building", valueGetter: (p: ValueGetterParams<FacilityColumn, string>) => p.data?.building?.name ?? '-' },
             { headerName: "Capacity", field: "capacity", maxWidth: 120 },
             {
+              headerName: "Responsible",
+              field: "responsible_person",
+              valueGetter: (p: ValueGetterParams<FacilityColumn, string>) => p.data?.responsible_person?.name ?? '-',
+              cellRenderer: (params: { data: FacilityColumn }) => {
+                const facility = params.data;
+                const rp = facility?.responsible_person;
+                return (
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="truncate">
+                      {rp?.name ?? '-'}
+                    </div>
+                    <AssignResponsiblePersonModal
+                      facilityId={facility.id}
+                      facilityName={facility.name}
+                      trigger={
+                        <Button variant={rp ? "ghost" : "outline"} size="sm" className="h-7 px-2 text-xs">
+                          {rp ? "Edit" : "Assign"}
+                        </Button>
+                      }
+                    />
+                  </div>
+                );
+              },
+            },
+            {
+              headerName: "Schedule",
+              field: "schedules",
+              valueGetter: (p: ValueGetterParams<FacilityColumn, string>) => p.data?.schedules?.name ?? '-',
+              cellRenderer: (params: { data: FacilityColumn }) => {
+                const facility = params.data;
+                const schedule = facility?.schedules;
+                const slotsCount = Array.isArray(facility?.slots) ? facility.slots.length : 0;
+                return (
+                  <div className="flex items-center justify-between gap-2 w-full">
+                    <div className="truncate">
+                      {schedule?.name ?? '-'}{schedule ? (
+                        <span className="text-xs text-muted-foreground ml-2">{slotsCount} slots</span>
+                      ) : null}
+                    </div>
+                    <AssignScheduleModal
+                      facilityId={facility.id}
+                      facilityName={facility.name}
+                      trigger={
+                        <Button variant={schedule ? "ghost" : "outline"} size="sm" className="h-7 px-2 text-xs">
+                          {schedule ? "Update" : "Assign"}
+                        </Button>
+                      }
+                    />
+                  </div>
+                );
+              },
+            },
+            {
               headerName: "Actions",
-              field: "actions",
               maxWidth: 140,
               filter: false,
               sortable: false,

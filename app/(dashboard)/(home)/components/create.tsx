@@ -10,6 +10,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { BookingForm } from '../../bookings/components/booking'
+import { AddEventDialog } from '@/calendar/components/dialogs/add-event-dialog'
+import { Plus } from 'lucide-react'
 
 export function CreateBookingDialog() {
   const { isOpen, onToggle } = useDisclosure()
@@ -24,7 +26,13 @@ export function CreateBookingDialog() {
           <DialogTitle>Create Booking</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <BookingForm />
+          {/* <BookingForm /> */}
+          <AddEventDialog>
+            <Button className="w-full sm:w-auto">
+              <Plus />
+              Book Event
+            </Button>
+        </AddEventDialog>
         </div>
       </DialogContent>
     </Dialog>

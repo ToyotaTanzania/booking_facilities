@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { api } from "@/trpc/react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { SignOutButton } from "@/app/auth/signin/signout";
 
 import FullCalendar from "@fullcalendar/react";
@@ -11,6 +11,7 @@ import TimeGridPlugin from "@fullcalendar/timegrid";
 import InteractionPlugin from "@fullcalendar/interaction";
 import { AddEventDialog } from "@/calendar/components/dialogs/add-event-dialog";
 import CreateBookingDialog from "./components/create";
+import { Button } from "@/components/ui/button";
 
 interface BookingData {
   id: number;
@@ -157,7 +158,12 @@ export function BookingsCalendar() {
       </div>
 
       <div>
-        <CreateBookingDialog />
+        <AddEventDialog>
+          <Button className="w-full sm:w-auto">
+            <Plus />
+            Book Event
+          </Button>
+        </AddEventDialog>
       </div>
 
       <div className="p-2">
@@ -174,14 +180,14 @@ export function BookingsCalendar() {
           slotMinTime={"07:00:00"}
           slotMaxTime={"18:00:00"}
           editable={false}
-
           slotDuration={"00:30:00"}
-          headerToolbar={{
-            
-            // left: "prev,next",
-            // center: "title",
-            // right: "timeGridWeek,timeGridDay", // user can switch between the two
-          }}
+          headerToolbar={
+            {
+              // left: "prev,next",
+              // center: "title",
+              // right: "timeGridWeek,timeGridDay", // user can switch between the two
+            }
+          }
         />
       </div>
     </>

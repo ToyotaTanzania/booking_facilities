@@ -61,35 +61,39 @@ export function AssignScheduleModal({
   const typedSchedules = schedules as Schedule[] | undefined;
 
   // Create schedule mutation
-  const { mutate: createSchedule, isPending: isCreating } = api.schedule.create.useMutation({
-    onSuccess: () => {
-      toast.success("Schedule created and assigned successfully");
-      setOpen(false);
-      void utils.facility.list.invalidate();
-      void utils.schedule.list.invalidate();
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
+  const { mutate: createSchedule, isPending: isCreating } =
+    api.schedule.create.useMutation({
+      onSuccess: () => {
+        toast.success("Schedule created and assigned successfully");
+        setOpen(false);
+        void utils.facility.list.invalidate();
+        void utils.schedule.list.invalidate();
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    });
 
   // Update schedule mutation (to assign existing schedule)
-  const { mutate: updateSchedule, isPending: isUpdating } = api.facility.updateSchedule.useMutation({
-    onSuccess: () => {
-      toast.success("Schedule assigned successfully");
-      setOpen(false);
-      void utils.facility.list.invalidate();
-      void utils.schedule.list.invalidate();
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
+  const { mutate: updateSchedule, isPending: isUpdating } =
+    api.facility.updateSchedule.useMutation({
+      onSuccess: () => {
+        toast.success("Schedule assigned successfully");
+        setOpen(false);
+        void utils.facility.list.invalidate();
+        void utils.schedule.list.invalidate();
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    });
 
   // Handle schedule selection
   const handleScheduleSelect = (scheduleId: string) => {
     setSelectedScheduleId(scheduleId);
-    const selectedSchedule = typedSchedules?.find((schedule) => schedule.id.toString() === scheduleId);
+    const selectedSchedule = typedSchedules?.find(
+      (schedule) => schedule.id.toString() === scheduleId,
+    );
     if (selectedSchedule) {
       setScheduleName(selectedSchedule.name);
       setStartTime(selectedSchedule.start_time ?? "");
@@ -139,9 +143,7 @@ export function AssignScheduleModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Assign Schedule</DialogTitle>
@@ -153,7 +155,10 @@ export function AssignScheduleModal({
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="schedule">Select Existing Schedule</Label>
-            <Select value={selectedScheduleId} onValueChange={handleScheduleSelect}>
+            <Select
+              value={selectedScheduleId}
+              onValueChange={handleScheduleSelect}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Choose an existing schedule" />
               </SelectTrigger>
@@ -164,9 +169,12 @@ export function AssignScheduleModal({
                       <Calendar className="h-4 w-4" />
                       <span>{schedule.name}</span>
                       <span className="text-muted-foreground text-xs">
-                        {schedule.start_time ?? "No time"} - {schedule.end_time ?? "No time"}
+                        {schedule.start_time ?? "No time"} -{" "}
+                        {schedule.end_time ?? "No time"}
                         {schedule.slots && schedule.slots.length > 0 && (
-                          <span className="ml-1">({schedule.slots.length} slots)</span>
+                          <span className="ml-1">
+                            ({schedule.slots.length} slots)
+                          </span>
                         )}
                       </span>
                     </div>
@@ -174,30 +182,47 @@ export function AssignScheduleModal({
                 ))}
               </SelectContent>
             </Select>
-            
-            {/* Show selected schedule details */}
-            {selectedScheduleId && (() => {
-              const selectedSchedule = typedSchedules?.find(s => s.id.toString() === selectedScheduleId);
-              return selectedSchedule ? (
-                <div className="mt-2 p-3 bg-muted rounded-md">
-                  <h4 className="font-medium text-sm mb-2">Selected Schedule: {selectedSchedule.name}</h4>
-                  {selectedSchedule.slots && selectedSchedule.slots.length > 0 ? (
-                    <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground">Time Slots:</p>
-                      {selectedSchedule.slots.map((slot, index) => (
-                        <div key={slot.id} className="text-xs bg-background p-2 rounded border">
-                          <span className="font-medium">Slot {index + 1}:</span> {slot.start} - {slot.end} (Capacity: {slot.size})
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">No time slots defined</p>
-                  )}
-                </div>
-              ) : null;
-            })()}
-          </div>
 
+            {/* Show selected schedule details */}
+            <div className="h-56 overflow-auto">
+              {selectedScheduleId &&
+                (() => {
+                  const selectedSchedule = typedSchedules?.find(
+                    (s) => s.id.toString() === selectedScheduleId,
+                  );
+                  return selectedSchedule ? (
+                    <div className="bg-muted mt-2 rounded-md p-3">
+                      <h4 className="mb-2 text-sm font-medium">
+                        Selected Schedule: {selectedSchedule.name}
+                      </h4>
+                      {selectedSchedule.slots &&
+                      selectedSchedule.slots.length > 0 ? (
+                        <div className="space-y-1">
+                          <p className="text-muted-foreground text-xs">
+                            Time Slots:
+                          </p>
+                          {selectedSchedule.slots.map((slot, index) => (
+                            <div
+                              key={slot.id}
+                              className="bg-background rounded border p-2 text-xs"
+                            >
+                              <span className="font-medium">
+                                Slot {index + 1}:
+                              </span>{" "}
+                              {slot.start} - {slot.end} (Capacity: {slot.size})
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-xs">
+                          No time slots defined
+                        </p>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
+            </div>
+          </div>
         </div>
 
         <DialogFooter className="flex gap-2">
@@ -208,7 +233,7 @@ export function AssignScheduleModal({
           >
             Cancel
           </Button>
-          
+
           {selectedScheduleId ? (
             <Button
               type="button"
