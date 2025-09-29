@@ -1,0 +1,259 @@
+/* Shadcn-like theming for FullCalendar */
+
+/* Root calendar container */
+.fc {
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Toolbar */
+.fc .fc-toolbar.fc-header-toolbar {
+  padding: 0.5rem;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.fc .fc-toolbar-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Buttons (use shadcn button tokens) */
+.fc .fc-button {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  padding: 0.4rem 0.6rem;
+  line-height: 1;
+  height: 2rem;
+  box-shadow: 0 0 #0000;
+}
+
+.fc .fc-button:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.fc .fc-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 50%, transparent);
+}
+
+.fc .fc-button.fc-button-primary,
+.fc .fc-button.fc-next-button,
+.fc .fc-button.fc-prev-button {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+.fc .fc-button.fc-button-primary:hover,
+.fc .fc-button.fc-next-button:hover,
+.fc .fc-button.fc-prev-button:hover {
+  filter: brightness(0.95);
+}
+
+.fc .fc-button:disabled,
+.fc .fc-button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Day headers */
+.fc .fc-col-header-cell {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.fc .fc-col-header-cell-cushion {
+  padding: 0.5rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* Grid borders */
+.fc-theme-standard td,
+.fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid {
+  border-color: var(--border);
+}
+
+/* Today highlight */
+.fc .fc-day-today {
+  background: color-mix(in oklab, var(--primary) 6%, transparent);
+}
+
+/* Now indicator */
+.fc .fc-timegrid-now-indicator-line,
+.fc .fc-now-indicator {
+  border-color: var(--destructive);
+}
+
+/* Timegrid slot labels */
+.fc .fc-timegrid-slot-label {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+/* Custom event card content */
+.fc-event-card {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.35rem 0.45rem;
+  min-height: 4.25rem;
+}
+
+.fc-event-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.fc-event-time {
+  font-weight: 600;
+  font-size: 0.7rem;
+}
+
+.fc-event-status {
+  font-size: 0.65rem;
+  text-transform: capitalize;
+  background: color-mix(in oklab, var(--background) 20%, transparent);
+  padding: 0.1rem 0.35rem;
+  border-radius: 9999px;
+}
+
+.fc-status-pending { background: color-mix(in oklab, var(--ring) 20%, transparent); }
+.fc-status-confirmed { background: color-mix(in oklab, var(--primary-foreground) 15%, transparent); }
+.fc-status-cancelled { background: color-mix(in oklab, var(--destructive-foreground) 15%, transparent); }
+
+.fc-event-title {
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.fc-event-desc {
+  font-size: 0.7rem;
+  opacity: 0.9;
+}
+
+.fc-event-contact {
+  font-size: 0.68rem;
+  opacity: 0.9;
+}
+
+/* Increase event min height for multiline content */
+.fc .fc-timegrid-event-harness, .fc .fc-timegrid-event { min-height: 4.25rem; }
+
+.fc-event-user { font-size: 0.7rem; opacity: 0.9; }
+
+/* Events */
+.fc .fc-event,
+.fc .fc-v-event {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid color-mix(in oklab, var(--primary) 85%, black 0%);
+  border-radius: calc(var(--radius) - 2px);
+  box-shadow: var(--shadow-xs);
+}
+
+.fc .fc-event:hover {
+  filter: brightness(1.02);
+}
+
+.fc .fc-event .fc-event-main {
+  padding: 0.25rem 0.35rem;
+  font-size: 0.75rem;
+  line-height: 1.1;
+}
+
+/* Pending, confirmed, cancelled status variants using extendedProps */
+.fc-event[data-status="pending"] {
+  background: color-mix(in oklab, var(--ring) 20%, var(--primary));
+}
+
+.fc-event[data-status="confirmed"] {
+  background: var(--primary);
+}
+
+.fc-event[data-status="cancelled"] {
+  background: var(--destructive);
+}
+
+/* Selection highlight */
+.fc .fc-highlight {
+  background: color-mix(in oklab, var(--primary) 10%, transparent);
+}
+
+/* Popovers */
+.fc .fc-popover {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+}
+
+.fc .fc-popover-header {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Scrollbars inside calendar */
+.fc ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.fc ::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border: 2px solid var(--background);
+  border-radius: 10px;
+}
+
+.fc ::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+.fc ::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+/* Timegrid background cells */
+.fc .fc-timegrid-slot {
+  background: var(--background);
+}
+
+.fc .fc-timegrid-slot:hover {
+  background: color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+/* Daygrid events spacing */
+.fc .fc-daygrid-event {
+  margin: 2px 4px;
+}
+
+/* Dense compact appearance */
+.fc .fc-timegrid-axis-cushion,
+.fc .fc-timegrid-slot-label-cushion {
+  padding: 0.2rem 0.3rem;
+}
+
+/* Reduce header height a bit */
+.fc .fc-timegrid-slot-label-frame {
+  line-height: 1.1;
+}
+
+/* Utility: subtle card frame for week/day views */
+.fc .fc-scrollgrid {
+  border-radius: calc(var(--radius) - 2px);
+}
+
+

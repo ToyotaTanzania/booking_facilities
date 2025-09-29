@@ -13,6 +13,9 @@ import { AddEventDialog } from "@/calendar/components/dialogs/add-event-dialog";
 import CreateBookingDialog from "./components/create";
 import { Button } from "@/components/ui/button";
 
+// import './calendar.css'
+import { group, info } from "console";
+
 interface BookingData {
   id: number;
   date: string;
@@ -27,6 +30,7 @@ interface BookingData {
   facility: {
     id: number;
     name: string;
+    building?: { name: string; location: string };
   };
   user: {
     userid: string;
@@ -118,9 +122,15 @@ export function BookingsCalendar() {
               booking.schedule +
               booking.facility.id,
           ),
-          title: `${booking.facility.name} - ${booking.user.name}`,
+          groupId: `${booking.facility.date}-${booking.user.userid}`,
+          className: "cursor-pointer text-xs",
+          title: `${booking.facility.name} - ${booking.facility.building?.name} - ${booking?.facility?.building?.location} - ${booking.user.name}`,
           start: toLocalIsoNoZ(startDate),
           end: toLocalIsoNoZ(endDate),
+          color: booking.status === "confirmed" ? "green" : booking.status === "pending" ? "orange" : "red",
+          textColor: "white",
+          // display: 'inverse-background',
+          overlap: false,
           extendedProps: {
             status: booking.status,
             description: booking.description,
@@ -129,6 +139,10 @@ export function BookingsCalendar() {
             facilityId: booking.facility.id,
             slotId: booking.slot.id,
             scheduleId: booking.schedule,
+            facilityName: booking.facility.name,
+            userName: booking.user.name,
+            buildingName: booking.facility?.building?.name,
+            buildingLocation: booking.facility?.building?.location,
           },
         };
       })
@@ -141,14 +155,9 @@ export function BookingsCalendar() {
 
   return (
     <>
-
-      {/* <div>
-       
-      </div> */}
-
       <div className="p-2">
         <FullCalendar
-          height={"70vh"}
+          height={"100vh"}
           weekends={false}
           hiddenDays={[]}
           events={calendarEvents}
@@ -159,8 +168,40 @@ export function BookingsCalendar() {
           allDaySlot={false}
           slotMinTime={"07:00:00"}
           slotMaxTime={"18:00:00"}
-          editable={false}
-          slotDuration={"00:30:00"}
+          slotDuration={"00:10:00"}
+          eventDisplay="block"
+          eventContent={(arg) => {
+            const p = arg.event.extendedProps as any;
+            const status = (p?.status as string) ?? '';
+            const facilityName = (p?.facilityName as string) ?? '';
+            const buildingName = (p?.buildingName as string) ?? '';
+            const buildingLocation = (p?.buildingLocation as string) ?? '';
+            const userName = (p?.userName as string) ?? '';
+            const email = (p?.userEmail as string) ?? '';
+            const phone = (p?.userPhone as string | null) ?? '';
+            const description = (p?.description as string | null) ?? '';
+            return {
+              domNodes: [
+                (() => {
+                  const container = document.createElement('div');
+                  container.className = 'flex flex-col';
+                  container.innerHTML = `
+                    <div class="flex flex-col flex-wrap">
+                      <span class="text-xs">${facilityName}-${buildingName}-${buildingLocation}</span>
+                      <span class="ext-xs">${userName || ''}</span>
+                    </div>
+                  `;
+                  return container;
+                })(),
+              ],
+            };
+          }}
+          eventDidMount={(info) => {
+            const status = (info.event.extendedProps as any)?.status as string | undefined;
+            if (status && info.el) {
+              info.el.setAttribute('data-status', status);
+            }
+          }}
           headerToolbar={
             {
               // left: "prev,next",
