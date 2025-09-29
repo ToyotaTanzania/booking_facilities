@@ -1,20 +1,17 @@
 "use client";
 
-import Image from "next/image";
 import { api } from "@/trpc/react";
-import { Loader2, Plus } from "lucide-react";
-import { SignOutButton } from "@/app/auth/signin/signout";
+import { Loader2 } from "lucide-react";
 
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import TimeGridPlugin from "@fullcalendar/timegrid";
 import InteractionPlugin from "@fullcalendar/interaction";
-import { AddEventDialog } from "@/calendar/components/dialogs/add-event-dialog";
-import CreateBookingDialog from "./components/create";
-import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useState } from "react";
+import type { EventContentArg, EventClickArg, EventMountArg } from "@fullcalendar/core";
 
 // import './calendar.css'
-import { group, info } from "console";
 
 interface BookingData {
   id: number;
@@ -40,7 +37,37 @@ interface BookingData {
   };
 }
 
+type EventExtra = {
+  status: string;
+  description: string | null;
+  userEmail: string;
+  userPhone: string | null;
+  facilityId: number;
+  slotId: number;
+  scheduleId: number;
+  facilityName: string;
+  userName: string;
+  buildingName?: string;
+  buildingLocation?: string;
+};
+
+type SelectedEvent = {
+  title: string;
+  start: string;
+  end: string;
+  status: string;
+  description: string;
+  facilityName: string;
+  buildingName?: string;
+  buildingLocation?: string;
+  userName: string;
+  userEmail: string;
+  userPhone: string;
+};
+
 export function BookingsCalendar() {
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<SelectedEvent | null>(null)
   const { data: bookings, isLoading: bookingsLoading } =
     api.booking.getCalendarBookings.useQuery();
 
@@ -122,9 +149,9 @@ export function BookingsCalendar() {
               booking.schedule +
               booking.facility.id,
           ),
-          groupId: `${booking.facility.date}-${booking.user.userid}`,
+          groupId: `${booking.date}-${booking.user.userid}`,
           className: "cursor-pointer text-xs",
-          title: `${booking.facility.name} - ${booking.facility.building?.name} - ${booking?.facility?.building?.location} - ${booking.user.name}`,
+          title: `${booking.facility.name} - ${booking.facility.building?.name ?? ''} - ${booking.facility.building?.location ?? ''} - ${booking.user.name}`,
           start: toLocalIsoNoZ(startDate),
           end: toLocalIsoNoZ(endDate),
           color: booking.status === "confirmed" ? "green" : booking.status === "pending" ? "orange" : "red",
@@ -162,7 +189,7 @@ export function BookingsCalendar() {
           hiddenDays={[]}
           events={calendarEvents}
           plugins={[dayGridPlugin, TimeGridPlugin, InteractionPlugin]}
-          initialView="timeGridWeek"
+          initialView="timeGridDay"
           initialDate={initialDate}
           nowIndicator={true}
           allDaySlot={false}
@@ -170,16 +197,12 @@ export function BookingsCalendar() {
           slotMaxTime={"18:00:00"}
           slotDuration={"00:10:00"}
           eventDisplay="block"
-          eventContent={(arg) => {
-            const p = arg.event.extendedProps as any;
-            const status = (p?.status as string) ?? '';
-            const facilityName = (p?.facilityName as string) ?? '';
-            const buildingName = (p?.buildingName as string) ?? '';
-            const buildingLocation = (p?.buildingLocation as string) ?? '';
-            const userName = (p?.userName as string) ?? '';
-            const email = (p?.userEmail as string) ?? '';
-            const phone = (p?.userPhone as string | null) ?? '';
-            const description = (p?.description as string | null) ?? '';
+          eventContent={(arg: EventContentArg) => {
+            const p = arg.event.extendedProps as EventExtra;
+            const facilityName = p?.facilityName ?? '';
+            const buildingName = p?.buildingName ?? '';
+            const buildingLocation = p?.buildingLocation ?? '';
+            const userName = p?.userName ?? '';
             return {
               domNodes: [
                 (() => {
@@ -188,7 +211,7 @@ export function BookingsCalendar() {
                   container.innerHTML = `
                     <div class="flex flex-col flex-wrap">
                       <span class="text-xs">${facilityName}-${buildingName}-${buildingLocation}</span>
-                      <span class="ext-xs">${userName || ''}</span>
+                      <span class="ext-xs">${userName ?? ''}</span>
                     </div>
                   `;
                   return container;
@@ -196,11 +219,30 @@ export function BookingsCalendar() {
               ],
             };
           }}
-          eventDidMount={(info) => {
-            const status = (info.event.extendedProps as any)?.status as string | undefined;
+          eventDidMount={(info: EventMountArg) => {
+            const status = (info.event.extendedProps as EventExtra)?.status;
             if (status && info.el) {
               info.el.setAttribute('data-status', status);
             }
+          }}
+          eventClick={(arg: EventClickArg) => {
+            const ev = arg.event
+            const p = ev.extendedProps as EventExtra
+            setSelectedEvent({
+              title: ev.title,
+              start: ev.start?.toISOString() ?? '',
+              end: ev.end?.toISOString() ?? '',
+              status: p?.status ?? '',
+              description: p?.description ?? '',
+              facilityName: p?.facilityName ?? '',
+              buildingName: p?.buildingName ?? '',
+              buildingLocation: p?.buildingLocation ?? '',
+              userName: p?.userName ?? '',
+              userEmail: p?.userEmail ?? '',
+              userPhone: p?.userPhone ?? ''
+            })
+            setSheetOpen(true)
+            arg.jsEvent.preventDefault()
           }}
           headerToolbar={
             {
@@ -210,6 +252,46 @@ export function BookingsCalendar() {
             }
           }
         />
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetContent side="right" className="w-[420px] p-2 sm:w-[480px]">
+            <SheetHeader>
+              <SheetTitle className="text-base">
+                {selectedEvent?.facilityName ?? ''}
+              </SheetTitle>
+              <SheetDescription>
+                <span>
+                  {selectedEvent?.buildingName ?? ''}
+                  {selectedEvent?.buildingLocation ? `, ${selectedEvent?.buildingLocation}` : ''}
+                </span>
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-4 space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Status</span>
+                <span className="font-medium capitalize">{selectedEvent?.status ?? ''}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Starts</span>
+                <span className="font-medium">{selectedEvent?.start ? new Date(selectedEvent.start).toLocaleString() : ''}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Ends</span>
+                <span className="font-medium">{selectedEvent?.end ? new Date(selectedEvent.end).toLocaleString() : ''}</span>
+              </div>
+              <div className="pt-2 border-t">
+                <div className="font-medium">Booked by</div>
+                <div>{selectedEvent?.userName ?? ''}</div>
+                <div className="text-muted-foreground">{selectedEvent?.userEmail ?? ''}{(selectedEvent?.userPhone ? ` · ${selectedEvent.userPhone}` : '')}</div>
+              </div>
+              {(selectedEvent?.description ? (
+                <div className="pt-2 border-t">
+                  <div className="font-medium">Description</div>
+                  <div className="whitespace-pre-wrap">{selectedEvent.description}</div>
+                </div>
+              ) : null)}
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </>
   );
