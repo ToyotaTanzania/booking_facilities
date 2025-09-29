@@ -25,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { SignOutButton } from "@/app/auth/signin/signout";
+import Image from "next/image";
 
 const routes = [
   {
@@ -131,19 +132,39 @@ export function Sidebar() {
   return (
     <div
       className={cn(
-        "relative flex flex-col bg-card border-r border-border",
-        isCollapsed ? "w-[80px]" : "w-[280px]"
+        "bg-card border-border relative flex flex-col border-r",
+        isCollapsed ? "w-[80px]" : "w-[280px]",
       )}
     >
-      <div className="p-6 flex items-center justify-between">
+      <div className="flex items-center justify-between p-6">
         <div
           className={cn(
             "flex items-center gap-x-2",
-            isCollapsed && "justify-center w-full"
+            isCollapsed && "w-full justify-center",
           )}
         >
-          <div className="w-8 h-8 bg-primary rounded-full" />
-          {!isCollapsed && <h1 className="font-bold">Facilities</h1>}
+          {/* <div className="w-8 h-8 bg-primary rounded-full"> */}
+          {isCollapsed ? (
+            <div className="w-10 h-10 flex items-center justify-center rounded-full"> 
+            <Image
+              src="https://ik.imagekit.io/ttltz/brands/one/one-colored_H32SW3x_4.png?updatedAt=1757667292237"
+              alt="Karimjee Logo"
+              width={32}
+              height={32}
+              className="rounded-full"
+            />
+            </div>
+          ) : (
+            <Image
+              src="https://ik.imagekit.io/ttltz/brands/one/one-colored_H32SW3x_4.png?updatedAt=1757667292237"
+              alt="Karimjee Logo"
+              height={40}
+              width={400}
+              className="object-contain"
+            />
+          )}
+          {/* </div> */}
+          {/* {!isCollapsed && <h1 className="font-bold">Facilities</h1>} */}
         </div>
         <Button
           variant="ghost"
@@ -167,7 +188,7 @@ export function Sidebar() {
                   variant={openSection === route.label ? "secondary" : "ghost"}
                   className={cn(
                     "w-full justify-start gap-x-2",
-                    isCollapsed && "justify-center px-2"
+                    isCollapsed && "justify-center px-2",
                   )}
                   onClick={() => !isCollapsed && toggleSection(route.label)}
                 >
@@ -175,7 +196,7 @@ export function Sidebar() {
                   {!isCollapsed && <span>{route.label}</span>}
                 </Button>
                 {openSection === route.label && !isCollapsed && (
-                  <div className="ml-4 flex flex-col gap-y-2 mt-2">
+                  <div className="mt-2 ml-4 flex flex-col gap-y-2">
                     {route.children.map((child) => (
                       <Button
                         key={child.href}
@@ -199,7 +220,7 @@ export function Sidebar() {
                 variant={pathname === route.href ? "secondary" : "ghost"}
                 className={cn(
                   "w-full justify-start gap-x-2",
-                  isCollapsed && "justify-center px-2"
+                  isCollapsed && "justify-center px-2",
                 )}
                 asChild
               >
@@ -212,7 +233,7 @@ export function Sidebar() {
           </div>
         ))}
       </div>
-      <div className="mt-auto p-3 border-t border-border">
+      <div className="border-border mt-auto border-t p-3">
         <SignOutButton />
       </div>
     </div>

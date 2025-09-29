@@ -5,6 +5,7 @@ import { GetMyBookings } from "./components/bookings";
 import type { Session } from "next-auth";
 import * as _ from "lodash";
 import { GetResponsibleRooms } from "./components/responsibleBooking";
+import { Navigation } from "./navigation";
 
 export default async function BookingsPage() {
 
@@ -13,6 +14,7 @@ export default async function BookingsPage() {
   return (
     <div>
       <div className="flex flex-col gap-4 pt-8">
+        <Navigation />
         { 
             _.isEmpty(rooms) ? 
             (

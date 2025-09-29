@@ -141,30 +141,10 @@ export function BookingsCalendar() {
 
   return (
     <>
-      <div className="flex flex-col gap-4 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <Image
-            src="https://ik.imagekit.io/ttltz/brands/one/one-colored_H32SW3x_4.png?updatedAt=1757667292237"
-            alt="Karimjee Logo"
-            width={150}
-            height={50}
-            className="object-contain"
-          />
-        </div>
 
-        <div className="absolute top-4 right-4 z-50">
-          <SignOutButton />
-        </div>
-      </div>
-
-      <div>
-        <AddEventDialog>
-          <Button className="w-full sm:w-auto">
-            <Plus />
-            Book Event
-          </Button>
-        </AddEventDialog>
-      </div>
+      {/* <div>
+       
+      </div> */}
 
       <div className="p-2">
         <FullCalendar
