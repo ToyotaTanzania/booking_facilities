@@ -114,6 +114,7 @@ export const Approve = ({
             facility: booking.facility as number,
             date: booking.date as string,
             user: newUserId,
+            description: booking.description as string,
             comment: reason.trim(),
           });
           break;

@@ -201,6 +201,7 @@ export const bookingRouter = createTRPCRouter({
     facility: z.number(),
     date: z.string(),
     user: z.string(), 
+    description: z.string().optional(),
     comment: z.string().optional(),
   })).mutation(async ({ input, ctx }) => {
     const { facility, date, slot, user, comment } = input
@@ -209,7 +210,8 @@ export const bookingRouter = createTRPCRouter({
     .from('bookings')
     .update({
       user: user,
-      comment: comment
+      comment: comment,
+      description: input.description ?? "",
      })
     .eq('facility', facility)
     .eq('date', new Date(date).toISOString())
