@@ -8,8 +8,11 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import TimeGridPlugin from "@fullcalendar/timegrid";
 import InteractionPlugin from "@fullcalendar/interaction";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import type { EventContentArg, EventClickArg, EventMountArg } from "@fullcalendar/core";
+import { useSession } from "next-auth/react";
 
 // import './calendar.css'
 
@@ -35,6 +38,7 @@ interface BookingData {
     email: string;
     phone: string | null;
   };
+  responsiblePerson?: { email: string | null } | null;
 }
 
 type EventExtra = {
@@ -49,6 +53,10 @@ type EventExtra = {
   userName: string;
   buildingName?: string;
   buildingLocation?: string;
+  creatorUserId?: string;
+  responsibleEmail?: string | null;
+  date?: string;
+  bookingId?: number;
 };
 
 type SelectedEvent = {
@@ -63,13 +71,27 @@ type SelectedEvent = {
   userName: string;
   userEmail: string;
   userPhone: string;
+  facilityId: number;
+  slotId: number;
+  scheduleId: number;
+  creatorUserId?: string;
+  responsibleEmail?: string | null;
+  date: string;
+  bookingId?: number;
 };
 
 export function BookingsCalendar() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<SelectedEvent | null>(null)
+  const [newUserId, setNewUserId] = useState("")
   const { data: bookings, isLoading: bookingsLoading } =
     api.booking.getCalendarBookings.useQuery();
+  const { data: session } = useSession();
+  const utils = api.useUtils();
+  const approveMutation = api.booking.accept.useMutation({ onSuccess: async () => { await utils.booking.getCalendarBookings.invalidate(); setSheetOpen(false) } });
+  const rejectMutation = api.booking.reject.useMutation({ onSuccess: async () => { await utils.booking.getCalendarBookings.invalidate(); setSheetOpen(false) } });
+  const changeUserMutation = api.booking.changeUser.useMutation({ onSuccess: async () => { await utils.booking.getCalendarBookings.invalidate(); setSheetOpen(false); setNewUserId("") } });
+  const cancelMutation = api.booking.cancel.useMutation({ onSuccess: async () => { await utils.booking.getCalendarBookings.invalidate(); setSheetOpen(false) } });
 
   if (bookingsLoading) {
     return (
@@ -170,6 +192,10 @@ export function BookingsCalendar() {
             userName: booking.user.name,
             buildingName: booking.facility?.building?.name,
             buildingLocation: booking.facility?.building?.location,
+            creatorUserId: booking.user.userid,
+            responsibleEmail: booking.responsiblePerson?.email ?? null,
+            date: booking.date,
+            bookingId: booking.id,
           },
         };
       })
@@ -239,7 +265,14 @@ export function BookingsCalendar() {
               buildingLocation: p?.buildingLocation ?? '',
               userName: p?.userName ?? '',
               userEmail: p?.userEmail ?? '',
-              userPhone: p?.userPhone ?? ''
+              userPhone: p?.userPhone ?? '',
+              facilityId: p.facilityId,
+              slotId: p.slotId,
+              scheduleId: p.scheduleId,
+              creatorUserId: p.creatorUserId,
+              responsibleEmail: p.responsibleEmail ?? null,
+              date: p.date ?? '',
+              bookingId: p.bookingId,
             })
             setSheetOpen(true)
             arg.jsEvent.preventDefault()
@@ -289,9 +322,49 @@ export function BookingsCalendar() {
                   <div className="whitespace-pre-wrap">{selectedEvent.description}</div>
                 </div>
               ) : null)}
+            <div className="pt-3 border-t space-y-2">
+              {(() => {
+                const myEmail: string | null = session?.user?.email ?? null
+                const isCreator = !!selectedEvent && !!myEmail && selectedEvent.userEmail === myEmail
+                const isResponsible = !!selectedEvent && !!myEmail && !!selectedEvent.responsibleEmail && myEmail === selectedEvent.responsibleEmail
+                return (
+                  <div className="space-y-2">
+                    {isResponsible && (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Button size="sm" disabled={approveMutation.isPending || !selectedEvent} onClick={() => {
+                            if (!selectedEvent) return;
+                            approveMutation.mutate({ slot: selectedEvent.slotId, facility: selectedEvent.facilityId, date: selectedEvent.date, schedule: selectedEvent.scheduleId })
+                          }}>{approveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Approve'}</Button>
+                          <Button size="sm" variant="destructive" disabled={rejectMutation.isPending || !selectedEvent} onClick={() => {
+                            if (!selectedEvent) return;
+                            rejectMutation.mutate({ slot: selectedEvent.slotId, facility: selectedEvent.facilityId, date: selectedEvent.date })
+                          }}>{rejectMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reject'}</Button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input placeholder="New user ID (UUID)" value={newUserId} onChange={(e) => setNewUserId(e.target.value)} className="h-8" />
+                          <Button size="sm" disabled={changeUserMutation.isPending || !selectedEvent || !newUserId} onClick={() => {
+                            if (!selectedEvent || !newUserId) return;
+                            changeUserMutation.mutate({ slot: selectedEvent.slotId, facility: selectedEvent.facilityId, date: selectedEvent.date, user: newUserId })
+                          }}>{changeUserMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Change user'}</Button>
+                        </div>
+                      </div>
+                    )}
+                    {isCreator && (
+                      <div>
+                        <Button size="sm" variant="destructive" disabled={cancelMutation.isPending || !selectedEvent?.bookingId} onClick={() => {
+                          if (!selectedEvent?.bookingId) return;
+                          cancelMutation.mutate({ id: selectedEvent.bookingId })
+                        }}>{cancelMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Cancel booking'}</Button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
-          </SheetContent>
-        </Sheet>
+          </div>
+        </SheetContent>
+      </Sheet>
       </div>
     </>
   );
