@@ -42,6 +42,8 @@ export const Approve = ({
     onSuccess: async () => {
       toast.success('Booking approved successfully');
       await utils.facility.getAllByDate.invalidate();
+      await utils.booking.getPendingByFacility.invalidate();
+      await utils.responsiblePerson.getMyFacilitiesWithPending.invalidate();
       setOpen(false);
     },
     onError: (error) => {
@@ -52,6 +54,8 @@ export const Approve = ({
     onSuccess: async () => {
       toast.success('Booking rejected successfully');
       await utils.facility.getAllByDate.invalidate();
+      await utils.booking.getPendingByFacility.invalidate();
+      await utils.responsiblePerson.getMyFacilitiesWithPending.invalidate();
       setOpen(false);
     },
     onError: (error) => {
@@ -62,6 +66,8 @@ export const Approve = ({
     onSuccess: async () => {
       toast.success('Booking user changed successfully');
       await utils.facility.getAllByDate.invalidate();
+      await utils.booking.getPendingByFacility.invalidate();
+      await utils.responsiblePerson.getMyFacilitiesWithPending.invalidate();
       setOpen(false);
     },
     onError: (error) => {

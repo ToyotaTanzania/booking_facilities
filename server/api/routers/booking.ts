@@ -1,8 +1,25 @@
 import { date, z } from 'zod';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server'; 
 import { endOfYear, startOfYear } from 'date-fns';
+import { getMyBookings } from '@/app/(dashboard)/bookings/components/bookings';
 
 export const bookingRouter = createTRPCRouter({
+
+    getMyBookings: 
+    protectedProcedure
+    .query(async ({ ctx }) => { 
+      const { data, error } = await ctx.supabase
+      .from('bookings')
+      .select('*, slot:slots(*), facility:facilities(*, building(*)), user:profiles(*)')
+      .eq('user', ctx.session.supabase.id)
+      .order('date', { ascending: false })
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      return data
+    }),
 
     create: protectedProcedure
     .input(
@@ -74,6 +91,24 @@ export const bookingRouter = createTRPCRouter({
 
       return data
     }),
+
+    getPendingByFacility: protectedProcedure
+      .input(z.number())
+      .query(async ({ input, ctx }) => {
+        const facilityId = input;
+        const { data, error } = await ctx.supabase
+          .from('bookings')
+          .select('*, slot:slots(*), user:profiles(*), facility:facilities(*, building(*))')
+          .eq('facility', facilityId)
+          .eq('status', 'pending')
+          .order('date', { ascending: false });
+
+        if (error) {
+          throw new Error(error.message)
+        }
+
+        return data;
+      }),
 
 
     getCalendarBookings: publicProcedure.query(async ({ ctx }) => {
@@ -236,7 +271,6 @@ export const bookingRouter = createTRPCRouter({
     return data
   }),
 
-
   rescheduleAndConfirm: protectedProcedure
   .input(z.object({
     id: z.number(),
@@ -263,4 +297,27 @@ export const bookingRouter = createTRPCRouter({
 
     return data
   }),
+
+
+  remove: protectedProcedure
+  .input(z.object(z.object({
+    slot: z.number(),
+    facility: z.number(),
+    date: z.string(),
+    schedule: z.number(),
+  })) )
+  .mutation(async ({ input, ctx }) => { 
+    const { id } = input
+
+    const { data, error } = await ctx.supabase
+    .from('bookings')
+    .delete()
+    .eq('id', id)
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return data
+  })
 });

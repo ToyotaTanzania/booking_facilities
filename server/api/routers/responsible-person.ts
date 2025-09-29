@@ -15,6 +15,44 @@ export const responsiblePersonRouter = createTRPCRouter({
 
   }),
 
+  getMyFacilitiesWithPending: protectedProcedure
+  .query(async ({ ctx }) => {
+    // Fetch responsible facilities for the current user with facility/building details
+    const { data: responsibles, error } = await ctx.supabase
+      .from('responsible_person')
+      .select('*, facility:facility(*, building:buildings(*))')
+      .eq('user', ctx.session?.supabase?.id);
+
+    if (error) throw error;
+
+    const facilities = responsibles || [];
+    const facilityIds = facilities.map(r => r.facility?.id).filter(Boolean);
+
+    if (facilityIds.length === 0) return [] as any[];
+
+    // Fetch pending bookings for these facilities and count per facility on the server
+    const { data: pendingBookings, error: bookingsError } = await ctx.supabase
+      .from('bookings')
+      .select('*, facility(*)')
+      .in('facility', facilityIds as number[])
+      .eq('status', 'pending');
+
+    if (bookingsError) throw bookingsError;
+
+    const pendingCountByFacility: Record<number, number> = {};
+    (pendingBookings || []).forEach(b => {
+      const fid = (b as any).facility as number;
+      pendingCountByFacility[fid] = (pendingCountByFacility[fid] || 0) + 1;
+    });
+
+    const facilityWithBookings =  facilities.map(r => ({
+      ...r,
+      bookings: pendingBookings?.filter(b => (b as any).facility.id === r.facility?.id) || [],
+    }));
+
+    return facilityWithBookings;
+  }),
+
   getById: protectedProcedure
     .input(z.number())
     .query(async ({ ctx, input }) => {

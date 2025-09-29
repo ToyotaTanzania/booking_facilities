@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "@/server";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "@/server";
 
 const facilitySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -12,6 +12,43 @@ const facilitySchema = z.object({
 });
 
 export const facilityRouter = createTRPCRouter({
+  getAssignedToMe: protectedProcedure
+    .query(async ({ ctx }) => {
+      // Get responsible assignments for current user
+      const { data: responsibles, error } = await ctx.supabase
+        .from('responsible_person')
+        .select('*, facility:facility(*, building:buildings(*), type:facility_type(*))')
+        .eq('user', ctx.session?.supabase?.id);
+
+      if (error) throw error;
+
+      const facilities = (responsibles || [])
+        .map((r) => r.facility)
+        .filter((f) => !!f);
+
+      const facilityIds = facilities.map((f: any) => f.id as number);
+      if (facilityIds.length === 0) return [] as any[];
+
+      // Pending bookings per facility
+      const { data: pendingBookings, error: pendingError } = await ctx.supabase
+        .from('bookings')
+        .select('id, facility')
+        .in('facility', facilityIds)
+        .eq('status', 'pending');
+
+      if (pendingError) throw pendingError;
+
+      const pendingCountByFacility: Record<number, number> = {};
+      (pendingBookings || []).forEach((b: any) => {
+        const fid = b.facility as number;
+        pendingCountByFacility[fid] = (pendingCountByFacility[fid] || 0) + 1;
+      });
+
+      return facilities.map((f: any) => ({
+        ...f,
+        pendingCount: pendingCountByFacility[f.id] || 0,
+      }));
+    }),
   list: publicProcedure
     .query(async ({ ctx }) => {
       const { data, error } = await ctx.supabase
