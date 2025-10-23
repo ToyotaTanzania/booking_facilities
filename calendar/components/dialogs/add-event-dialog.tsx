@@ -3,10 +3,19 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSession } from "next-auth/react";
+import dayjs from "dayjs";
+
+import {
+  Select,
+  SelectContent,
+  SelectIndicator,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RiCheckboxCircleFill } from "@remixicon/react";
 
 import { useDisclosure } from "@/hooks/use-disclosure";
-import { useCalendar } from "@/calendar/contexts/calendar-context";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -15,6 +24,7 @@ import {
   FormItem,
   FormControl,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 
 import {
@@ -30,33 +40,12 @@ import {
 
 import { eventSchema } from "@/calendar/schemas";
 
-import { Input, type TimeValue } from "react-aria-components";
 import type { TEventFormData } from "@/calendar/schemas";
 import { api } from "@/trpc/react";
-import { bookingFiltersAtom } from "@/store/booking";
-import { useAtom } from "jotai/react";
-import { DatePicker } from "@/components/ui/date-picker";
-import { format, isValid, parse } from "date-fns";
-import { useId } from "react";
-
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-import { fi, id } from "date-fns/locale";
-import _, { create, set } from "lodash";
+import _ from "lodash";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { useMount } from "react-use";
-import { SingleDayPicker } from "@/components/ui/single-day-picker";
-import { Textarea } from "@/components/ui/textarea";
-import { TimeInput } from "@/components/ui/time-input";
-import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
 
 // import { useEffect } from "react";
 // import { useForm } from "react-hook-form";
@@ -78,23 +67,25 @@ import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
 
 interface IProps {
   children: React.ReactNode;
-  startDate?: Date;
-  startTime?: { hour: number; minute: number };
+  date?: Date;
+  location: string | number;
+  building: string | number;
+  room: string | number;
 }
 
-export function AddEventDialog({ children, startDate }: IProps) {
-  const session = useSession();
+export function AddEventDialog({ children, date }: IProps) {
+  const { isOpen, onToggle } = useDisclosure();
+  const [building, setBuilding] = useState<string>("");
+  const [location, setLocation] = useState<string>("");
+  const [amenities, setAmenities] = useState();
 
-  const [schedule, setSchedule] = useState<string>("");
+  const { data: allLocations } = api.location.list.useQuery();
+  const { data: allBuildings } = api.building.list.useQuery();
 
-  const { isOpen, onClose, onToggle } = useDisclosure();
   const { data: allSlots } = api.slots.getAll.useQuery();
   const { data: allFacilities } = api.facility.getAll.useQuery();
 
   const utils = api.useUtils();
-
-  const { data: bookings, isLoading: bookingsLoading } =
-    api.booking.getCalendarBookings.useQuery();
 
   const { mutate: createBooking } = api.booking.create.useMutation({
     onSuccess: async () => {
@@ -106,57 +97,36 @@ export function AddEventDialog({ children, startDate }: IProps) {
     },
   });
 
-  // const { data: booked, isLoading } = api.facility.getAllByDate.useQuery({
-  //   date: date ? new Date(date) : new Date(),
-  //   facility: facility?.id ?? null,
-  //   building: building?.id ?? null,
-  //   location: location?.id   ?? null,
-  // },{
-  //   enabled: !!date,
-  //   refetchOnMount: true,
-  //   refetchOnWindowFocus: true,
-  //   refetchOnReconnect: true,
-  //   refetchInterval: 1000 * 60 * 5,
-  //   refetchIntervalInBackground: true,
-  // })
-
-  const facilities = _.groupBy(
-    allFacilities,
-    (fac: { building: { name: string; location: string } }) =>
-      fac.building.name + "," + fac.building.location,
-  );
-
   const form = useForm<TEventFormData>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
+      location: "",
+      building: "",
       room: "",
       slots: [],
-      date: startDate ? new Date(startDate) : new Date(),
+      date: dayjs(date || undefined),
     },
   });
 
   const onSubmit = (_values: TEventFormData) => {
+    console.log(_values);
     // TO DO: Create use-add-event hook
-    const [room, schedule] = (_values.room ?? "").split(",");
-    createBooking({
-      slots: _values.slots?.map((s) => Number(s)) ?? [],
-      date: _values.date.toISOString(),
-      facility: Number(room),
-      schedule: Number(schedule),
-    });
-    form.reset();
-    onClose();
+    // const [room, schedule] = (_values.room ?? "").split(",");
+    // createBooking({
+    //   slots: _values.slots?.map((s) => Number(s)) ?? [],
+    //   date: _values.date.toISOString(),
+    //   facility: Number(room),
+    //   schedule: Number(schedule),
+    // });
+    // form.reset();
+    // onClose();
   };
 
   useEffect(() => {
     form.reset({
-      date: startDate ? new Date(startDate) : new Date(),
+      date: dayjs(date) ?? dayjs(),
     });
-  }, [startDate, form]);
-
-  useMount(() => {
-   
-  });
+  }, [date, form]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onToggle}>
@@ -177,15 +147,110 @@ export function AddEventDialog({ children, startDate }: IProps) {
           >
             <FormField
               control={form.control}
-              name="date"
+              name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="date">Date</FormLabel>
-
-                  <FormControl className="w-full">
-                    <DatePicker onChange={field.onChange} value={field.value} />
+                  <FormLabel>Location</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={String(field.value || "")}
+                      onValueChange={(value) => {
+                        setLocation(value);
+                        setBuilding(""); // Reset building when location changes
+                        form.setValue("building", "");
+                        form.setValue("room", "");
+                        field.onChange(value);
+                      }}
+                      indicator={
+                        <SelectIndicator>
+                          <RiCheckboxCircleFill className="text-primary size-4" />
+                        </SelectIndicator>
+                      }
+                    >
+                      <SelectTrigger className="w-full border border-gray-100 [&_small]:hidden">
+                        <SelectValue placeholder="Select location" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allLocations?.map((location: any) => (
+                          <SelectItem key={location.id} value={location.name}>
+                            <span className="flex flex-col items-start gap-px">
+                              <span className="font-medium">
+                                {location.name}
+                              </span>
+                              <small className="text-muted-foreground text-xs">
+                                {location.address}
+                              </small>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
+                  <FormDescription>
+                    Selected: {field.value || "None"}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
+            <FormField
+              control={form.control}
+              name="building"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Building</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={String(field.value || "")}
+                      onValueChange={(value) => {
+                        setBuilding(value);
+                        form.setValue("room", ""); // Reset room when building changes
+                        field.onChange(value);
+                      }}
+                      disabled={!location}
+                      indicator={
+                        <SelectIndicator>
+                          <RiCheckboxCircleFill className="text-primary size-4" />
+                        </SelectIndicator>
+                      }
+                    >
+                      <SelectTrigger className="w-full border border-gray-100 [&_small]:hidden">
+                        <SelectValue
+                          placeholder={
+                            location
+                              ? "Select building"
+                              : "Select location first"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allBuildings
+                          ?.filter(
+                            (localBuildings) =>
+                              localBuildings.location === location,
+                          )
+                          ?.map((building: any) => (
+                            <SelectItem
+                              key={building.id}
+                              value={building.id.toString()}
+                            >
+                              <span className="flex flex-col items-start gap-px">
+                                <span className="font-medium">
+                                  {building.name}
+                                </span>
+                                <small className="text-muted-foreground text-xs">
+                                  {building.location}
+                                </small>
+                              </span>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormDescription>
+                    Selected: {field.value || "None"}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -196,53 +261,73 @@ export function AddEventDialog({ children, startDate }: IProps) {
               name="room"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="Location">Room</FormLabel>
-
-                  <Select
-                    onValueChange={(value: string) => {
-                      field.onChange(value);
-
-                      setSchedule(value.split(",")[1] ?? "");
-
-                      form.setValue("slots", []);
-                    }}
-                    value={field.value}
-                  >
-                    <SelectTrigger className="w-full **:data-desc:hidden">
-                      <SelectValue placeholder="Choose a plan" />
-                    </SelectTrigger>
-
-                    <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
-                      {_.filter(facilities, (f) => f.length > 0).map(
-                        (group, index) => (
-                          <div key={index}>
-                            <div className="text-muted-foreground px-2 py-1 text-sm font-medium">
-                              {_.startCase(group[0].building.name)},{" "}
-                              {_.startCase(group[0].building.location)}
-                            </div>
-
-                            {group.map((facility) => (
-                              <SelectItem
-                                key={facility.id.toString() + index}
-                                value={`${facility.id.toString()},${facility.schedule}`}
-                                onSelect={field.onChange}
-                                className="cursor-pointer"
-                              >
-                                {_.startCase(facility.name)}{" "}
-                                <span
-                                  className="text-muted-foreground mt-1 block text-xs"
-                                  data-desc
-                                >
-                                  Capacity: {facility.capacity}
+                  <FormLabel>Room/Facility</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={String(field.value || "")}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        const room = allFacilities?.find(
+                          (val) => val.id == value,
+                        );
+                        setAmenities(room.amenities);
+                      }}
+                      disabled={!building}
+                      indicator={
+                        <SelectIndicator>
+                          <RiCheckboxCircleFill className="text-primary size-4" />
+                        </SelectIndicator>
+                      }
+                    >
+                      <SelectTrigger className="w-full border border-gray-100 [&_small]:hidden">
+                        <SelectValue
+                          placeholder={
+                            building
+                              ? "Select room/facility"
+                              : "Select building first"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allFacilities
+                          ?.filter(
+                            (localFacility) =>
+                              localFacility.building.id.toString() === building,
+                          )
+                          ?.map((facility: any) => (
+                            <SelectItem
+                              key={facility.id}
+                              value={facility.id.toString()}
+                            >
+                              <div className="flex w-full flex-col items-start gap-1">
+                                <span className="font-medium">
+                                  {facility.name}
                                 </span>
-                              </SelectItem>
-                            ))}
-                          </div>
-                        ),
-                      )}
-                    </SelectContent>
-                  </Select>
-
+                                <div className="flex flex-col gap-0.5">
+                                  <small className="text-muted-foreground text-xs">
+                                    Capacity: {facility.capacity}
+                                  </small>
+                                </div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormDescription>
+                    {amenities && amenities.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {amenities.map((amenity: any, index: number) => (
+                          <span
+                            key={index}
+                            className="bg-primary/10 text-primary border-primary/20 inline-flex items-center rounded border px-1.5 py-0.5 text-xs"
+                          >
+                            {amenity.name || amenity}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -257,8 +342,9 @@ export function AddEventDialog({ children, startDate }: IProps) {
 
                   <FormControl>
                     <div className="grid max-h-60 grid-cols-2 gap-2 overflow-y-auto rounded-md bg-gray-100 p-4">
-                      {schedule && allSlots?.[schedule]?.length ? (
-                        allSlots[schedule].map((slot) => {
+                      {form.getValues("room") &&
+                      allSlots?.[String(form.getValues("room"))]?.length ? (
+                        allSlots[String(form.getValues("room"))].map((slot) => {
                           const value = String(slot?.id);
                           const inputId = `slot-${value}`;
                           const isChecked =
