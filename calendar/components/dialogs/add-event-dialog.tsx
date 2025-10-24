@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import dayjs from "dayjs";
@@ -14,6 +14,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RiCheckboxCircleFill } from "@remixicon/react";
+
+import {
+  MiniCalendar,
+  MiniCalendarDay,
+  MiniCalendarDays,
+  MiniCalendarNavigation,
+} from "@/components/ui/mini-calendar";
 
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { Button } from "@/components/ui/button";
@@ -42,9 +49,6 @@ import { eventSchema } from "@/calendar/schemas";
 
 import type { TEventFormData } from "@/calendar/schemas";
 import { api } from "@/trpc/react";
-import { Label } from "@/components/ui/label";
-import _ from "lodash";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 // import { useEffect } from "react";
@@ -77,7 +81,13 @@ export function AddEventDialog({ children, date }: IProps) {
   const { isOpen, onToggle } = useDisclosure();
   const [building, setBuilding] = useState<string>("");
   const [location, setLocation] = useState<string>("");
-  const [amenities, setAmenities] = useState();
+  const [amenities, setAmenities] = useState<any[]>([]);
+  
+  // Slot selection state - simplified approach
+  const [selectionMode, setSelectionMode] = useState<'none' | 'single' | 'range'>('none');
+  const [rangeStart, setRangeStart] = useState<number | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const slotsContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: allLocations } = api.location.list.useQuery();
   const { data: allBuildings } = api.building.list.useQuery();
@@ -104,9 +114,102 @@ export function AddEventDialog({ children, date }: IProps) {
       building: "",
       room: "",
       slots: [],
-      date: dayjs(date || undefined),
+      date: dayjs(date ?? undefined),
     },
   });
+
+  // Simple and reliable slot selection logic
+  const handleSlotClick = useCallback((slotId: string, slotIndex: number, slots: any[], fieldOnChange: (value: string[]) => void) => {
+    const currentSlots = form.getValues("slots") ?? [];
+    const isSelected = currentSlots.includes(slotId);
+
+    if (selectionMode === 'none') {
+      // Single click - toggle slot
+      const newSlots = isSelected 
+        ? currentSlots.filter(id => id !== slotId)
+        : [...currentSlots, slotId];
+      
+      form.setValue("slots", newSlots);
+      fieldOnChange(newSlots);
+    } else if (selectionMode === 'range') {
+      // Complete range selection
+      if (rangeStart !== null) {
+        // If clicking the same slot, just toggle it
+        if (rangeStart === slotIndex) {
+          const newSlots = isSelected 
+            ? currentSlots.filter(id => id !== slotId)
+            : [...currentSlots, slotId];
+          
+          form.setValue("slots", newSlots);
+          fieldOnChange(newSlots);
+        } else {
+          // Range selection
+          const start = Math.min(rangeStart, slotIndex);
+          const end = Math.max(rangeStart, slotIndex);
+          const slotsInRange = slots.slice(start, end + 1).map(slot => String(slot.id));
+          
+          // Determine if we're adding or removing based on first slot
+          const firstSlotId = String(slots[rangeStart].id);
+          const firstSlotSelected = currentSlots.includes(firstSlotId);
+          
+          let newSlots;
+          if (firstSlotSelected) {
+            // Remove all slots in range
+            newSlots = currentSlots.filter(id => !slotsInRange.includes(id));
+          } else {
+            // Add all slots in range
+            newSlots = [...new Set([...currentSlots, ...slotsInRange])];
+          }
+          
+          form.setValue("slots", newSlots);
+          fieldOnChange(newSlots);
+        }
+      }
+      
+      // Reset selection mode
+      setSelectionMode('none');
+      setRangeStart(null);
+      setHoveredIndex(null);
+    }
+  }, [selectionMode, rangeStart, form]);
+
+  // Handle range selection start (shift+click)
+  const handleRangeStart = useCallback((slotId: string, slotIndex: number) => {
+    setSelectionMode('range');
+    setRangeStart(slotIndex);
+    setHoveredIndex(slotIndex); // Set initial hover to the clicked slot
+  }, []);
+
+  // Handle mouse hover during range selection
+  const handleSlotHover = useCallback((slotIndex: number) => {
+    if (selectionMode === 'range') {
+      setHoveredIndex(slotIndex);
+    }
+  }, [selectionMode]);
+
+  // Handle mouse leave - cancel range selection
+  const handleMouseLeave = useCallback(() => {
+    if (selectionMode === 'range') {
+      setSelectionMode('none');
+      setRangeStart(null);
+      setHoveredIndex(null);
+    }
+  }, [selectionMode]);
+
+  // Check if slot is in current range preview
+  const isSlotInRange = useCallback((slotIndex: number) => {
+    if (selectionMode !== 'range' || rangeStart === null) return false;
+    
+    // If no hover yet, only show the start slot
+    if (hoveredIndex === null) {
+      return slotIndex === rangeStart;
+    }
+    
+    const start = Math.min(rangeStart, hoveredIndex);
+    const end = Math.max(rangeStart, hoveredIndex);
+    
+    return slotIndex >= start && slotIndex <= end;
+  }, [selectionMode, rangeStart, hoveredIndex]);
 
   const onSubmit = (_values: TEventFormData) => {
     console.log(_values);
@@ -123,10 +226,30 @@ export function AddEventDialog({ children, date }: IProps) {
   };
 
   useEffect(() => {
-    form.reset({
-      date: dayjs(date) ?? dayjs(),
-    });
+    // Only reset the date, preserve other form values
+    form.setValue("date", dayjs(date) ?? dayjs());
   }, [date, form]);
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      // Reset form when dialog opens
+      form.reset({
+        location: "",
+        building: "",
+        room: "",
+        slots: [],
+        date: dayjs(date) ?? dayjs(),
+      });
+      // Reset local state
+      setLocation("");
+      setBuilding("");
+      setAmenities([]);
+      setSelectionMode('none');
+      setRangeStart(null);
+      setHoveredIndex(null);
+    }
+  }, [isOpen, form, date]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onToggle}>
@@ -145,6 +268,33 @@ export function AddEventDialog({ children, date }: IProps) {
             onSubmit={form.handleSubmit(onSubmit)}
             className="grid gap-4 py-4"
           >
+
+          <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date</FormLabel>
+                  <FormControl>
+                   <MiniCalendar  onValueChange={field.onChange} value={field.value}>
+                      <MiniCalendarNavigation direction="prev" />
+                      <MiniCalendarDays className="w-full flex justify-between">
+                        {(date) => 
+                          <MiniCalendarDay
+                            date={date} 
+                            key={date.toISOString()} 
+                          />
+                        }
+                      </MiniCalendarDays>
+                      <MiniCalendarNavigation direction="next" />
+                    </MiniCalendar>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+
             <FormField
               control={form.control}
               name="location"
@@ -186,9 +336,6 @@ export function AddEventDialog({ children, date }: IProps) {
                       </SelectContent>
                     </Select>
                   </FormControl>
-                  <FormDescription>
-                    Selected: {field.value || "None"}
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -248,9 +395,6 @@ export function AddEventDialog({ children, date }: IProps) {
                       </SelectContent>
                     </Select>
                   </FormControl>
-                  <FormDescription>
-                    Selected: {field.value || "None"}
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -336,69 +480,182 @@ export function AddEventDialog({ children, date }: IProps) {
             <FormField
               control={form.control}
               name="slots"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Time Slots</FormLabel>
+              render={({ field }) => {
+                const currentSlots = allSlots?.[String(form.getValues("room"))] ?? [];
+                const selectedSlots = field.value ?? [];
+                
+                return (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Time Slots</FormLabel>
+                    <FormDescription>
+                      {selectionMode === 'range' 
+                        ? `Range selection active. Click another slot to complete (${rangeStart !== null ? `from slot ${rangeStart + 1}` : ''}), or move mouse away to cancel.`
+                        : "Click to select individual slots. Hold Shift and click to start range selection."
+                      }
+                    </FormDescription>
 
-                  <FormControl>
-                    <div className="grid max-h-60 grid-cols-2 gap-2 overflow-y-auto rounded-md bg-gray-100 p-4">
-                      {form.getValues("room") &&
-                      allSlots?.[String(form.getValues("room"))]?.length ? (
-                        allSlots[String(form.getValues("room"))].map((slot) => {
-                          const value = String(slot?.id);
-                          const inputId = `slot-${value}`;
-                          const isChecked =
-                            Array.isArray(field.value) &&
-                            field.value.includes(value);
-                          return (
-                            <div
-                              className="flex cursor-pointer items-center gap-2 rounded-sm p-2"
-                              key={value}
-                            >
-                              <Checkbox
-                                id={inputId}
-                                className="cursor-pointer border-black"
-                                checked={isChecked}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    field.onChange([
-                                      ...(field.value ?? []),
-                                      value,
-                                    ]);
-                                  } else {
-                                    field.onChange(
-                                      (field.value ?? []).filter(
-                                        (v: string) => v !== value,
-                                      ),
-                                    );
-                                  }
-                                }}
-                              />
-                              <Label htmlFor={inputId}>
-                                {slot.start} - {slot.end}{" "}
-                              </Label>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <p className="text-sm text-gray-500">
-                          Please select a room to see available time slots.
-                        </p>
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+                    <FormControl>
+                      <div 
+                        ref={slotsContainerRef}
+                        className={`max-h-60 overflow-y-auto rounded-md border p-2 transition-colors ${
+                          selectionMode === 'range' 
+                            ? 'border-primary/50 bg-primary/5' 
+                            : 'border-gray-200 bg-white'
+                        }`}
+                        onMouseLeave={handleMouseLeave}
+                      >
+                        {currentSlots.length > 0 ? (
+                          <div className="grid grid-cols-1 gap-1">
+                            {currentSlots.map((slot, index) => {
+                              const value = String(slot?.id);
+                              const isSelected = selectedSlots.includes(value);
+                              const isInRange = isSlotInRange(index);
+                              const isRangeStart = selectionMode === 'range' && rangeStart === index;
+                              const isRangeEnd = selectionMode === 'range' && hoveredIndex === index && hoveredIndex !== rangeStart;
+                              
+                              return (
+                                <div
+                                  key={value}
+                                  className={`
+                                    relative flex cursor-pointer items-center justify-between rounded-md border-2 p-3 transition-all duration-150
+                                    ${isSelected 
+                                      ? 'border-primary bg-primary/10 text-primary' 
+                                      : isInRange 
+                                        ? 'border-primary/50 bg-primary/5 text-primary/80' 
+                                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                                    }
+                                    ${isRangeStart ? 'rounded-t-md' : ''}
+                                    ${isRangeEnd ? 'rounded-b-md' : ''}
+                                    ${isInRange && !isRangeStart && !isRangeEnd ? 'rounded-none' : ''}
+                                  `}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    
+                                    if (e.shiftKey) {
+                                      // Shift+click to start range selection
+                                      handleRangeStart(value, index);
+                                    } else {
+                                      // Normal click
+                                      handleSlotClick(value, index, currentSlots, field.onChange);
+                                    }
+                                  }}
+                                  onMouseEnter={() => handleSlotHover(index)}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className={`
+                                      h-4 w-4 rounded-full border-2 transition-all
+                                      ${isSelected 
+                                        ? 'border-primary bg-primary' 
+                                        : isInRange 
+                                          ? 'border-primary/50 bg-primary/20' 
+                                          : 'border-gray-300 bg-white'
+                                      }
+                                    `}>
+                                      {isSelected && (
+                                        <div className="h-full w-full rounded-full bg-white scale-50" />
+                                      )}
+                                    </div>
+                                    <span className="font-medium text-sm">
+                                      {slot.start} - {slot.end}
+                                    </span>
+                                  </div>
+                                  
+                                  {isInRange && (
+                                    <div className="text-xs text-primary/60 font-medium">
+                                      {isRangeStart ? 'Start' : isRangeEnd ? 'End' : 'Range'}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center py-8">
+                            <p className="text-sm text-gray-500">
+                              Please select a room to see available time slots.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </FormControl>
+                    
+                    {selectedSlots.length > 0 && (
+                      <div className="rounded-md bg-green-50 p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-green-800">
+                              Selected {selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''}
+                            </p>
+                            <p className="text-xs text-green-600 mt-1">
+                              {(() => {
+                                const currentSlots = allSlots?.[String(form.getValues("room"))] ?? [];
+                                const selectedSlotObjects = currentSlots.filter(slot => 
+                                  selectedSlots.includes(String(slot.id))
+                                );
+                                
+                                if (selectedSlotObjects.length === 0) return 'No slots found';
+                                
+                                // Sort by slot order (assuming slots are in chronological order)
+                                const sortedSlots = selectedSlotObjects.sort((a, b) => {
+                                  const aIndex = currentSlots.findIndex(s => s.id === a.id);
+                                  const bIndex = currentSlots.findIndex(s => s.id === b.id);
+                                  return aIndex - bIndex;
+                                });
+                                
+                                const firstSlot = sortedSlots[0];
+                                const lastSlot = sortedSlots[sortedSlots.length - 1];
+                                
+                                // Check if slots are consecutive
+                                const isConsecutive = sortedSlots.length > 1 && 
+                                  sortedSlots.every((slot, index) => {
+                                    if (index === 0) return true;
+                                    const prevSlot = sortedSlots[index - 1];
+                                    const prevIndex = currentSlots.findIndex(s => s.id === prevSlot.id);
+                                    const currentIndex = currentSlots.findIndex(s => s.id === slot.id);
+                                    return currentIndex === prevIndex + 1;
+                                  });
+                                
+                                if (selectedSlots.length === 1) {
+                                  return `${firstSlot.start} - ${firstSlot.end}`;
+                                } else if (isConsecutive) {
+                                  return `${firstSlot.start} to ${lastSlot.end}`;
+                                } else {
+                                  // Show individual slots for non-consecutive selection
+                                  return sortedSlots.map(slot => `${slot.start}-${slot.end}`).join(', ');
+                                }
+                              })()}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              form.setValue("slots", []);
+                              field.onChange([]);
+                            }}
+                            className="text-green-700 border-green-300 hover:bg-green-100 ml-3"
+                          >
+                            Clear
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <DialogFooter>
               <DialogClose asChild>
-                <Button type="button" variant="outline">
+                <Button type="button" className="cursor-pointer" variant="outline">
                   Cancel
                 </Button>
               </DialogClose>
-              <Button form="event-form" type="submit">
+              <Button form="event-form" className="cursor-pointer" type="submit">
                 Confirm
               </Button>
             </DialogFooter>
