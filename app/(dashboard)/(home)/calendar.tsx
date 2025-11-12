@@ -81,13 +81,17 @@ type SelectedEvent = {
 };
 
 export function BookingsCalendar() {
-  const [sheetOpen, setSheetOpen] = useState(false)
+  
   const [selectedEvent, setSelectedEvent] = useState<SelectedEvent | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [newUserId, setNewUserId] = useState("")
+
   const { data: bookings, isLoading: bookingsLoading } =
     api.booking.getCalendarBookings.useQuery();
+
   const { data: session } = useSession();
   const utils = api.useUtils();
+
   const approveMutation = api.booking.accept.useMutation({ onSuccess: async () => { await utils.booking.getCalendarBookings.invalidate(); setSheetOpen(false) } });
   const rejectMutation = api.booking.reject.useMutation({ onSuccess: async () => { await utils.booking.getCalendarBookings.invalidate(); setSheetOpen(false) } });
   const changeUserMutation = api.booking.changeUser.useMutation({ onSuccess: async () => { await utils.booking.getCalendarBookings.invalidate(); setSheetOpen(false); setNewUserId("") } });

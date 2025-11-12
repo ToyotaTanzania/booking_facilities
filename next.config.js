@@ -6,23 +6,23 @@ import "./env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
+  // Ensure Next.js uses this project as the workspace root to avoid monorepo lockfile inference issues
+  outputFileTracingRoot: process.cwd(),
   images: {
-    minimumCacheTTL:0,
-    
-    domains: ['ik.imagekit.io', 'edhtqyeynuorhcpllepd.supabase.co'],
+    minimumCacheTTL: 0,
+    domains: ["ik.imagekit.io", "edhtqyeynuorhcpllepd.supabase.co"],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'https://edhtqyeynuorhcpllepd.supabase.co',
-        port: '',
-        pathname: '/storage/v1/object/public/**',
-        
+        protocol: "https",
+        hostname: "https://edhtqyeynuorhcpllepd.supabase.co",
+        port: "",
+        pathname: "/storage/v1/object/public/**",
       },
       {
-        protocol: 'https',
-        hostname: 'ik.imagekit.io',
-        port: '',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "ik.imagekit.io",
+        port: "",
+        pathname: "/**",
       },
     ],
   },

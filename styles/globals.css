@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+  --font-sans: var(--font-redhat), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
@@ -100,7 +100,7 @@
   --sidebar-border: oklch(0.93 0.01 261.82);
   --sidebar-ring: #184377;
 
-  --font-sans: Inter, sans-serif;
+  --font-sans: var(--font-redhat), Inter, sans-serif;
   --font-serif: Source Serif 4, serif;
   --font-mono: IBM Plex Mono, monospace;
 

@@ -148,7 +148,7 @@ export function OTPVerificationForm() {
   };
 
   const handleBackToLogin = () => {
-    router.push("/auth/login");
+    router.push("/auth/signin");
   };
 
   // Show loading while checking session status

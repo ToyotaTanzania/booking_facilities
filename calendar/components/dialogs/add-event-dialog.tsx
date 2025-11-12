@@ -212,15 +212,16 @@ export function AddEventDialog({ children, date }: IProps) {
   }, [selectionMode, rangeStart, hoveredIndex]);
 
   const onSubmit = (_values: TEventFormData) => {
-    console.log(_values);
+    const currentFacility = allFacilities?.find((f) => f.id === Number(_values.room));
     // TO DO: Create use-add-event hook
-    // const [room, schedule] = (_values.room ?? "").split(",");
-    // createBooking({
-    //   slots: _values.slots?.map((s) => Number(s)) ?? [],
-    //   date: _values.date.toISOString(),
-    //   facility: Number(room),
-    //   schedule: Number(schedule),
-    // });
+    const [room, schedule] = [currentFacility?.id.toString(), currentFacility?.schedule.toString()];
+
+    createBooking({
+      slots: _values.slots?.map((s) => Number(s)) ?? [],
+      date: _values.date.toISOString(),
+      facility: Number(room),
+      schedule: Number(schedule),
+    });
     // form.reset();
     // onClose();
   };

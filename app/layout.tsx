@@ -1,13 +1,12 @@
 import "@/styles/globals.css";
 
-import { Cairo, Lato } from "next/font/google"
+import { Red_Hat_Text } from "next/font/google"
 import { type Metadata } from "next";
 
 import { TRPCReactProvider } from "@/trpc/react";
 import Providers from "./providers";
 import { cn } from "@/lib/utils";
 import { env } from "@/env";
-
 
 export const metadata: Metadata = {
   title: {
@@ -18,29 +17,22 @@ export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_BASE_URL),
 }
 
-const latoFont = Lato({
+const redHatFont = Red_Hat_Text({
   subsets: ["latin"],
-  weight: ["100", "300", "400", "700", "900"],
+  weight: ["400", "500", "700"],
   style: ["normal", "italic"],
-  variable: "--font-lato",
-})
-const cairoFont = Cairo({
-  subsets: ["arabic"],
-  weight: ["400", "700"],
-  style: ["normal"],
-  variable: "--font-cairo",
+  variable: "--font-redhat",
 })
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" 
+    <html lang="en"
     className={cn(
-      "[&:lang(en)]:font-lato [&:lang(ar)]:font-cairo", // Set font styles based on the language
-      "bg-background text-foreground antialiased overscroll-none", // Set background, text, , anti-aliasing styles, and overscroll behavior
-      latoFont.variable, // Include Lato font variable
-      cairoFont.variable // Include Cairo font variable
+      "font-sans",
+      "bg-background text-foreground antialiased overscroll-none",
+      redHatFont.variable
     )}>
       <body>
         <TRPCReactProvider>

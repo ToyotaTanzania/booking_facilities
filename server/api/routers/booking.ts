@@ -36,27 +36,29 @@ export const bookingRouter = createTRPCRouter({
 
         const mailer = ctx.mailer;
 
-        const { data, error } = await ctx.supabase
-        .from('bookings')
-        .insert(slots.map(slot => ({
-          slot: slot,
-          date: date,
-          schedule: schedule,
-          facility: facility,
-          user: ctx.session.supabase.sub,
-          description: ctx.session.user.email,
-          status: 'pending'
-        })))
+        // const { data, error } = await ctx.supabase
+        // .from('bookings')
+        // .insert(slots.map(slot => ({
+        //   slot: slot,
+        //   date: date,
+        //   schedule: schedule,
+        //   facility: facility,
+        //   user: ctx.session.supabase.sub,
+        //   description: ctx.session.user.email,
+        //   status: 'pending'
+        // })))
 
-        if (error) {
-          throw new Error(error.message)
-        }
+        // if (error) {
+        //   throw new Error(error.message)
+        // }
 
         const { data: responsible } = await ctx.supabase
         .from("responsible_person")
         .select("*, facility(*, building(*))")
-        .eq("facility", facility)
+        .eq("facility", typeof facility === 'number' ? facility : +facility)
         .single();
+
+        console.log(responsible)
 
         if (responsible) {
           await mailer.sendMail({ 
@@ -69,7 +71,7 @@ export const bookingRouter = createTRPCRouter({
           })
         }
 
-        return data
+        // return data
       }
     ),
 

@@ -237,7 +237,7 @@ export const Navigation = React.forwardRef<HTMLElement, Navbar01Props>(
           {/* Right side */}
           <div className="flex items-center gap-3">
             <div>
-              <AddEventDialog>
+              <AddEventDialog >
                 <Button className="w-full sm:w-auto">
                   <Plus />
                   Create
