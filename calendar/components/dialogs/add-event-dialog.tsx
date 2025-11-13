@@ -78,7 +78,7 @@ interface IProps {
 }
 
 export function AddEventDialog({ children, date }: IProps) {
-  const { isOpen, onToggle } = useDisclosure();
+  const { isOpen, onToggle, onClose } = useDisclosure();
   const [building, setBuilding] = useState<string>("");
   const [location, setLocation] = useState<string>("");
   const [amenities, setAmenities] = useState<any[]>([]);
