@@ -19,6 +19,8 @@ interface BookingConfirmationEmailProps {
   startsAt: string; // formatted date/time string
   endsAt: string; // formatted date/time string
   bookingsUrl: string;
+  date?: string
+  requester: string
 }
 
 export const BookingConfirmationEmail = ({
@@ -27,6 +29,8 @@ export const BookingConfirmationEmail = ({
   startsAt,
   endsAt,
   bookingsUrl,
+  date,
+  requester,
 }: BookingConfirmationEmailProps) => (
   <Html>
     <Head>
@@ -37,7 +41,7 @@ export const BookingConfirmationEmail = ({
     </Head>
     <Tailwind>
       <Body className="bg-white font-sans" style={{ fontFamily: '"Red Hat Text", Arial, sans-serif' }}>
-        <Preview>Your facility booking is confirmed</Preview>
+        <Preview>Booking from {requester}</Preview>
         <Container className="mx-auto py-5 pb-12">
           <Img
             src={`https://ik.imagekit.io/ttltz/brands/one/one-colored_H32SW3x_4.png?updatedAt=1757667292237`}
@@ -47,8 +51,14 @@ export const BookingConfirmationEmail = ({
             className="mx-auto"
           />
           <Text className="text-[16px] leading-[26px]">Hi {username},</Text>
+           <Text className="text-[16px] leading-[26px]">
+            Booking from <strong>{requester}</strong>.
+          </Text>
           <Text className="text-[16px] leading-[26px]">
-            Your booking has been made for <strong>{facilityName}</strong>.
+            Booking has been made for <strong>{facilityName}</strong>.
+          </Text>
+           <Text className="text-[16px] leading-[26px]">
+            Date <strong>{date}</strong>.
           </Text>
           <Text className="text-[16px] leading-[26px]">
             From <strong>{startsAt}</strong> to <strong>{endsAt}</strong>.

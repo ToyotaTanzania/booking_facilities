@@ -1,7 +1,9 @@
-import { date, z } from 'zod';
+import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server'; 
-import { endOfYear, startOfYear } from 'date-fns';
-import { getMyBookings } from '@/app/(dashboard)/bookings/components/bookings';
+import { endOfYear, format, startOfYear } from 'date-fns';
+import { render } from '@react-email/components';
+import BookingConfirmationEmail from '@/emails/notify';
+import { v4 as uuidv4 } from 'uuid';
 
 export const bookingRouter = createTRPCRouter({
 
@@ -11,7 +13,7 @@ export const bookingRouter = createTRPCRouter({
       const { data, error } = await ctx.supabase
       .from('bookings')
       .select('*, slot:slots(*), facility:facilities(*, building(*)), user:profiles(*)')
-      .eq('user', ctx.session.supabase.id)
+      .eq('user', ctx.session.user.id)
       .order('date', { ascending: false })
 
       if (error) {
@@ -28,29 +30,35 @@ export const bookingRouter = createTRPCRouter({
         date: z.string(),
         schedule: z.number(),
         facility: z.number(),
+        startsAt: z.string().optional(),
+        endsAt: z.string().optional(),
       })
     ).mutation( 
       async ({ input, ctx }) => { 
 
-        const { slots, date, schedule, facility } = input
+        const { slots, date, schedule, facility, startsAt, endsAt } = input
+        const uuid = uuidv4()
 
         const mailer = ctx.mailer;
 
-        // const { data, error } = await ctx.supabase
-        // .from('bookings')
-        // .insert(slots.map(slot => ({
-        //   slot: slot,
-        //   date: date,
-        //   schedule: schedule,
-        //   facility: facility,
-        //   user: ctx.session.supabase.sub,
-        //   description: ctx.session.user.email,
-        //   status: 'pending'
-        // })))
+        const user = ctx.session.supabase.user
 
-        // if (error) {
-        //   throw new Error(error.message)
-        // }
+        const { data, error } = await ctx.supabase
+        .from('bookings')
+        .insert(slots.map(slot => ({
+          slot: slot,
+          date: date,
+          schedule: schedule,
+          facility: facility,
+          user: user.id,
+          description: user.email,
+          status: 'pending',
+          code: uuid
+        })))
+
+        if (error) {
+          throw new Error(error.message)
+        }
 
         const { data: responsible } = await ctx.supabase
         .from("responsible_person")
@@ -58,20 +66,35 @@ export const bookingRouter = createTRPCRouter({
         .eq("facility", typeof facility === 'number' ? facility : +facility)
         .single();
 
-        console.log(responsible)
-
         if (responsible) {
-          await mailer.sendMail({ 
+
+          const { facility, name, email, phone } = responsible
+
+          // Render email HTML without JSX (file is .ts)
+          const emailHtml = await render(
+            BookingConfirmationEmail({
+              username: name ?? "",
+              facilityName: `${facility?.name}-${facility?.building?.name}-${facility?.building?.location}`,
+              startsAt: startsAt ?? "",
+              endsAt: endsAt ?? "",
+              // date: date ?? "",
+              date: format(new Date(date), "EEEE d, MMMM yyyy" /*, { locale: enUS }*/),
+              requester: ctx.session.user.name ?? "",
+              bookingsUrl: "https://boardrooms.karimjee.com/bookings",
+            })
+          );
+
+          const options = {
             from: "no-reply@karimjee.com",
             to: responsible.email,
-            subject: "New Booking Request",
-            text: `A new booking request has been made by 
-            ${ctx.session.user.email} 
-            for ${responsible?.facility?.name}, ${responsible?.facility?.building?.name}, ${responsible?.facility?.building?.location} on ${date}. Please take a look`,
-          })
+            subject: `New booking request for ${responsible?.facility?.name}-${facility.building.name}-${facility.building.location}`,
+            html: emailHtml,
+          };
+
+          mailer.sendMail(options);
         }
 
-        // return data
+        return data
       }
     ),
 
@@ -154,7 +177,7 @@ export const bookingRouter = createTRPCRouter({
       const { data, error } = await ctx.supabase
       .from('bookings')
       .update({ status: 'confirmed', 
-        approved_by: ctx.session.supabase.sub, 
+        approved_by: ctx.session.user.id, 
         approved_at: new Date().toISOString(), 
         comment: comment 
       })
@@ -182,7 +205,7 @@ export const bookingRouter = createTRPCRouter({
       .from('bookings')
       .update({ 
         status: 'rejected', 
-        approved_by: ctx.session.supabase.sub, 
+        approved_by: ctx.session.user.id, 
         approved_at: new Date().toISOString(), 
         comment: comment 
       })
@@ -236,7 +259,7 @@ export const bookingRouter = createTRPCRouter({
   const { data, error } = await ctx.supabase
     .from('bookings')
     .update({ status: 'cancelled',
-      approved_by: ctx.session.supabase.sub, 
+      approved_by: ctx.session.user.id, 
       approved_at: new Date().toISOString(), 
       comment: comment, 
     })
@@ -261,7 +284,7 @@ export const bookingRouter = createTRPCRouter({
   const { data, error } = await ctx.supabase
     .from('bookings')
     .update({ status: 'pending',
-      approved_by: ctx.session.supabase.sub, 
+      approved_by: ctx.session.user.id, 
       approved_at: new Date().toISOString(), 
       comment: comment, 
       date: date 
@@ -287,7 +310,7 @@ export const bookingRouter = createTRPCRouter({
   const { data, error } = await ctx.supabase
     .from('bookings')
     .update({ status: 'confirmed',
-      approved_by: ctx.session.supabase.sub, 
+      approved_by: ctx.session.user.id, 
       approved_at: new Date().toISOString(), 
       comment: comment, 
       date: date,
@@ -304,12 +327,9 @@ export const bookingRouter = createTRPCRouter({
 
 
   remove: protectedProcedure
-  .input(z.object(z.object({
-    slot: z.number(),
-    facility: z.number(),
-    date: z.string(),
-    schedule: z.number(),
-  })) )
+  .input(z.object({
+    id: z.number(),
+  }))
   .mutation(async ({ input, ctx }) => { 
     const { id } = input
 

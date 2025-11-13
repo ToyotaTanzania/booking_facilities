@@ -92,7 +92,7 @@ export function AddEventDialog({ children, date }: IProps) {
   const { data: allLocations } = api.location.list.useQuery();
   const { data: allBuildings } = api.building.list.useQuery();
 
-  const { data: allSlots } = api.slots.getAll.useQuery();
+  const { data: allSlots, isLoading: loadingSlots } = api.slots.getAll.useQuery();
   const { data: allFacilities } = api.facility.getAll.useQuery();
 
   const utils = api.useUtils();
@@ -212,18 +212,34 @@ export function AddEventDialog({ children, date }: IProps) {
   }, [selectionMode, rangeStart, hoveredIndex]);
 
   const onSubmit = (_values: TEventFormData) => {
+
+    if(loadingSlots) return
+
+
     const currentFacility = allFacilities?.find((f) => f.id === Number(_values.room));
     // TO DO: Create use-add-event hook
     const [room, schedule] = [currentFacility?.id.toString(), currentFacility?.schedule.toString()];
+
+    const startSlotId = _values.slots?.[0] ?? ""
+    const endSlotId = _values.slots?.[ _values.slots.length -1 ] ?? ""
+
+    const slots = allSlots?.[String(_values.room)] ?? []
+
+    const startSlot = slots?.find((s) => s.id === +startSlotId) ?? ""
+    const endSlot = slots?.find((s) => s.id === +endSlotId) ?? ""
+
+    console.log(startSlot, endSlot)
 
     createBooking({
       slots: _values.slots?.map((s) => Number(s)) ?? [],
       date: _values.date.toISOString(),
       facility: Number(room),
       schedule: Number(schedule),
+      startsAt: startSlot?.start ?? "",
+      endsAt: endSlot?.end ?? ""
     });
-    // form.reset();
-    // onClose();
+    form.reset();
+    onClose();
   };
 
   useEffect(() => {
