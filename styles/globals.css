@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* In your main CSS file (e.g., globals.css) */
+@source "../node_modules/@ilamy/calendar/dist";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme {

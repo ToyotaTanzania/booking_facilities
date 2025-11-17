@@ -55,8 +55,7 @@ export const facilityRouter = createTRPCRouter({
         .from("facilities")
         .select(`
           *,
-          building:buildings(*),
-          type:facility_type(*)
+          building:buildings(*)
         `)
         .order("name");
 
@@ -73,13 +72,48 @@ export const facilityRouter = createTRPCRouter({
         .select(`*`);
 
       if (error) throw error;
-      return data.map((facility) => ({
+      
+      const results =  data.map((facility) => ({
         ...facility,
         responsible_person: responsiblePerson?.find((person) => person.facility === facility.id) || null,
         schedules: schedules?.find((schedule) => schedule.id === facility.schedule) || null,
         slots: slots?.filter((slot) => slot.schedule === facility.schedule) || null,
       }));
+      
+      return results
     }),
+
+  filtered: publicProcedure
+    .input(z.object({
+      location: z.string().nullable().optional(),
+      building: z.number().nullable().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { location, building } = input;
+
+      const query = ctx.supabase
+        .from("facilities")
+        .select(`*,building:buildings(*)`);
+
+      if (location) {
+        query.eq("building.location", location);
+      }
+
+      if (building && building !== 0) {
+        query.eq("building", building);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return data.map((facility) => ({
+        ...facility,
+        building: facility.building,
+      }));
+
+    }),
+
+
 
   getAll: publicProcedure
     .query(async ({ ctx }) => {

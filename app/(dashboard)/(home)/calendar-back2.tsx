@@ -96,7 +96,7 @@ export function BookingsCalendar() {
   const rejectMutation = api.booking.reject.useMutation({ onSuccess: async () => { await utils.booking.getCalendarBookings.invalidate(); setSheetOpen(false) } });
   const changeUserMutation = api.booking.changeUser.useMutation({ onSuccess: async () => { await utils.booking.getCalendarBookings.invalidate(); setSheetOpen(false); setNewUserId("") } });
   const cancelMutation = api.booking.cancel.useMutation({ onSuccess: async () => { await utils.booking.getCalendarBookings.invalidate(); setSheetOpen(false) } });
-
+  
   if (bookingsLoading) {
     return (
       <div className="flex h-[60vh] w-full items-center justify-center">

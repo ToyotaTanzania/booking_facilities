@@ -41,7 +41,7 @@ export const bookingRouter = createTRPCRouter({
 
         const mailer = ctx.mailer;
 
-        const user = ctx.session.supabase.user
+        const user = ctx.session.user
 
         const { data, error } = await ctx.supabase
         .from('bookings')
@@ -109,13 +109,101 @@ export const bookingRouter = createTRPCRouter({
       .eq('facility', typeof input.facility === 'number' ? input.facility : +input.facility)
       .eq('date', input.date)
 
-
       if (error) {
         throw new Error(error.message)
       }
 
       return data
     }),
+
+    filteredBookings: publicProcedure
+      .input(
+        z.object({
+          date: z.string().nullable().optional(),
+          interval: z.enum(['day', 'week', 'month', 'year']).optional(),
+          building: z.number().nullable().optional(),
+          location: z.string().nullable().optional(),
+          facility: z.union([z.string(), z.number()]).nullable().optional(),
+        })
+      )
+      .query(async ({ input, ctx }) => {
+
+        const query = ctx.supabase
+          .from('bookings')
+          .select('*, user:profiles(*), slot:slots(*), facility:facilities(*, building:buildings(*))')
+
+        if (input.facility) {
+          const facilityId = typeof input.facility === 'number' ? input.facility : +input.facility;
+          query.eq('facility', facilityId);
+        }
+
+        if (input.building) {
+          // Filter by building through embedded relationship
+          query.eq('facility.building', input.building);
+        }
+
+        if (input.location) {
+          // Filter by location name on the building
+          query.eq('facility.building.location', input.location);
+        }
+
+        // Date filtering by interval range
+        if(input.date){
+        const base = new Date(input.date);
+        const startDate = format(base, 'yyyy-MM-dd');
+          if (input.interval === 'week') {
+          const end = new Date(base);
+          end.setDate(base.getDate() + 6);
+          const endDate = format(end, 'yyyy-MM-dd');
+          query.gte('date', startDate).lte('date', endDate);
+        } else if (input.interval === 'month') {
+          const end = new Date(base);
+          end.setMonth(base.getMonth() + 1);
+          const endDate = format(end, 'yyyy-MM-dd');
+          query.gte('date', startDate).lte('date', endDate);
+        } else if (input.interval === 'year') {
+          const end = new Date(base);
+          end.setFullYear(base.getFullYear() + 1);
+          const endDate = format(end, 'yyyy-MM-dd');
+          query.gte('date', startDate).lte('date', endDate);
+        } else {
+          // Default to exact date
+          query.eq('date', startDate);
+        }
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        // Enrich bookings with computed start/end strings without constructing Date objects
+        const normalizeTime = (t?: string | null) => {
+          if (!t) return '08:00:00';
+          const s = String(t).trim();
+          if (/^\d{2}:\d{2}$/.test(s)) return `${s}:00`;
+          if (/^\d{2}:\d{2}:\d{2}$/.test(s)) return s;
+          const parts = s.split(':');
+          const hh = (parts[0] || '08').padStart(2, '0');
+          const mm = (parts[1] || '00').padStart(2, '0');
+          const ss = (parts[2] || '00').padStart(2, '0');
+          return `${hh}:${mm}:${ss}`;
+        };
+
+        const enriched = (data || []).map((booking: any) => {
+          const rawDate = booking?.date;
+          const isYmd = typeof rawDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawDate);
+          const dateStr = isYmd ? rawDate : (rawDate ? format(new Date(rawDate), 'yyyy-MM-dd') : startDate);
+          const startTime = normalizeTime(booking?.slot?.start_time);
+          const endTime = normalizeTime(booking?.slot?.end_time);
+          const start = `${dateStr}T${startTime}`;
+          const end = `${dateStr}T${endTime}`;
+          return { ...booking, start, end };
+        });
+
+        return enriched;
+      }),
 
     getPendingByFacility: protectedProcedure
       .input(z.number())
@@ -254,7 +342,7 @@ export const bookingRouter = createTRPCRouter({
     id: z.number(),
     comment: z.string().optional(),
   })).mutation(async ({ input, ctx }) => {
-    const { id, date, comment } = input
+    const { id, comment } = input
 
   const { data, error } = await ctx.supabase
     .from('bookings')
