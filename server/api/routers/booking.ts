@@ -4,6 +4,25 @@ import { endOfYear, format, startOfYear } from 'date-fns';
 import { render } from '@react-email/components';
 import BookingConfirmationEmail from '@/emails/notify';
 import { v4 as uuidv4 } from 'uuid';
+import { setDate, setHours, setMinutes, set, isDate} from 'date-fns'
+
+import _ from 'lodash'
+
+const ExtractTime = (input: string) => {
+  const split = input.split(':');
+  return split
+}
+
+const setDateTime = (date: string, time: string) => {
+  const [ hour, minute ] = time.split(':');
+  const dateObj = set(new Date(date), {
+    hours: +hour!,
+    minutes: +minute!,
+    seconds: 0,
+    milliseconds: 0,
+  })
+  return format(dateObj, 'yyyy-MM-dd HH:mm:ss')
+}
 
 export const bookingRouter = createTRPCRouter({
 
@@ -191,15 +210,15 @@ export const bookingRouter = createTRPCRouter({
           return `${hh}:${mm}:${ss}`;
         };
 
+
+
         const enriched = (data || []).map((booking: any) => {
           const rawDate = booking?.date;
           const isYmd = typeof rawDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawDate);
-          const dateStr = isYmd ? rawDate : (rawDate ? format(new Date(rawDate), 'yyyy-MM-dd') : startDate);
-          const startTime = normalizeTime(booking?.slot?.start_time);
-          const endTime = normalizeTime(booking?.slot?.end_time);
-          const start = `${dateStr}T${startTime}`;
-          const end = `${dateStr}T${endTime}`;
-          return { ...booking, start, end };
+          const dateStr = isDate(rawDate) ? format(new Date(rawDate), 'yyyy-MM-dd') : rawDate;
+          const start = setDateTime(dateStr, booking.slot.start);
+          const end = setDateTime(dateStr, booking.slot.end);
+          return { ...booking, start, end, isYmd, dateStr };
         });
 
         return enriched;
@@ -431,5 +450,60 @@ export const bookingRouter = createTRPCRouter({
     }
 
     return data
-  })
+  }),
+
+  searchBookings: publicProcedure
+  .input(z.object({
+    date: z.string().nullable().optional(),
+    building: z.number().nullable().optional(),
+    location: z.string().nullable().optional(),
+    facility: z.union([z.string(), z.number()]).nullable().optional(),
+  })).query(async ({ input, ctx }) => {
+    const { date, building, location, facility } = input
+
+    console.log(input)
+
+    const query = ctx.supabase
+    .from('bookings')
+    // .select('*, facility(*)')
+    .select('*, slot:slots(*), facility:facilities(*, building(*)), user:profiles(*)')
+    .eq('date', date)
+    .or(`status.eq.confirmed,status.eq.pending`)
+    .order('createdAt', { ascending: false })
+
+    if(!_.isEmpty(facility) || (_.isNumber(facility) && facility > 0)) {
+      query.eq('facility', facility)
+    }
+    if(!_.isEmpty(building) || (_.isNumber(building) && building > 0)) {
+      const { data: facilities } = await ctx.supabase
+        .from('facilities')
+        .select('id')
+        .eq('building', building);
+      const facilityIds = facilities?.map(f => f.id) ?? [];
+      query.in('facility', facilityIds);
+    }else if(!_.isEmpty(location)){
+      const buildingQuery = ctx.supabase
+      .from('buildings')
+      .select('id')
+      .ilike('location', `%${location}%`)
+  
+      const { data: buildings } = await buildingQuery
+      const buildingIds = buildings?.map(b => b.id) ?? [];
+      const { data: facilities } = await ctx.supabase
+        .from('facilities')
+        .select('id')
+        .in('building', buildingIds);
+
+        const facilityIds = facilities?.map(f => f.id) ?? [];
+        query.in('facility', facilityIds);
+    }
+
+    const { data, error } = await query
+    
+    if (error) {
+      throw new Error(error.message)
+    }
+  
+    return data
+  }),
 });

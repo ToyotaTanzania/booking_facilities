@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
 
+import { Status, StatusIndicator, StatusLabel } from "@/src/components/kibo-ui/status";
+
 const Colors = {
   rejected: "#F87171",
   approved: "#10B981",
@@ -13,6 +15,13 @@ const Colors = {
   pending: "#F59E0B",
   default: "#cecece",
 };
+
+const StatusMap = {
+  rejected: "offline",
+  approved: "online",
+  confirmed: "online",
+  pending: "degraded",
+}
 
 type statuses = keyof typeof Colors;
 
@@ -33,11 +42,7 @@ const EventItem = ({ event }: { event: any }) => {
   const formatDate = (d: Date | null) =>
     d && isValid(d) ? format(d, "dd MMM yyyy") : "";
   const formatTime = (d: string) => {
-    // extract the last valid ISO timestamp
-    const match = d.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
-    const clean = match ? match[0] : null;
-
-    const parsed = clean ? parseISO(clean) : null;
+    const parsed = d ? parseISO(d) : null;
 
     return parsed && isValid(parsed) ? format(parsed, "HH:mm") : "";
   };
@@ -52,7 +57,6 @@ const EventItem = ({ event }: { event: any }) => {
       description: event?.description || "",
       location: event?.facility?.name || "",
     });
-    console.log(url);
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -66,11 +70,12 @@ const EventItem = ({ event }: { event: any }) => {
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="text-xs">
+      <div className="text-xs flex items-start gap-1 flex-col">
+        <span className="font-medium">{event?.owner?.name || ""}</span>
         <span className="font-medium">{event?.name}</span>
       </div>
 
-      <Badge
+      {/* <Badge
           className="rounded-full px-2 py-0.5 text-[10px] font-medium"
           style={{
             backgroundColor: Colors[status] || Colors.default,
@@ -79,21 +84,24 @@ const EventItem = ({ event }: { event: any }) => {
           }}
         >
           {capitalize(status)}
-        </Badge>
+        </Badge> */}
+
       {/* <div className="text-muted-foreground text-xs">
        
       </div> */}
 
       <div className="flex items-center justify-between">
-      
-
          {formatDate(new Date(event.date))}
-
-        <div className="text-muted-foreground text-xs">
-          {formatTime(event.start)} – {formatTime(event.end)}
-        </div>
-
       </div>
+
+      <Status status={
+        StatusMap[status] || "default"
+      }>
+        <StatusIndicator />
+        <StatusLabel className="font-mono">
+          {formatTime(event.start)} – {formatTime(event.end)}
+        </StatusLabel>
+      </Status>
 
       <div className="flex items-center gap-2">
         <Button

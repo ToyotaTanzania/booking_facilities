@@ -87,9 +87,10 @@ export const facilityRouter = createTRPCRouter({
     .input(z.object({
       location: z.string().nullable().optional(),
       building: z.number().nullable().optional(),
+      facility: z.number().nullable().optional(),
     }))
     .query(async ({ ctx, input }) => {
-      const { location, building } = input;
+      const { location, building, facility } = input;
 
       const query = ctx.supabase
         .from("facilities")
@@ -101,6 +102,10 @@ export const facilityRouter = createTRPCRouter({
 
       if (building && building !== 0) {
         query.eq("building", building);
+      }
+
+      if (facility && facility !== 0) {
+        query.eq("id", facility);
       }
 
       const { data, error } = await query;
