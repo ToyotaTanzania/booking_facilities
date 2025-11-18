@@ -469,7 +469,7 @@ export const bookingRouter = createTRPCRouter({
     .select('*, slot:slots(*), facility:facilities(*, building(*)), user:profiles(*)')
     .eq('date', date)
     .or(`status.eq.confirmed,status.eq.pending`)
-    .order('createdAt', { ascending: false })
+    .order('created_at', { ascending: false })
 
     if(!_.isEmpty(facility) || (_.isNumber(facility) && facility > 0)) {
       query.eq('facility', facility)
