@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { setDate, setHours, setMinutes, set, isDate} from 'date-fns'
 
 import _ from 'lodash'
+import { eventSchema } from '@/calendar/schemas';
 
 const ExtractTime = (input: string) => {
   const split = input.split(':');
@@ -116,6 +117,42 @@ export const bookingRouter = createTRPCRouter({
         return data
       }
     ),
+
+    guestBooking: publicProcedure
+    .input(eventSchema)
+    .mutation(async ({ input, ctx }) => {
+
+      const code = uuidv4()
+
+      const bookings = input.slots.map(slot => ({
+        slot: slot,
+        date: input.date,
+        schedule: input.schedule,
+        facility: input.room,
+        user: null,
+        description: input.title ?? input.email ?? input.phone ?? "",
+        status: 'pending',
+        code: code,
+        name: input.name ?? "",
+        email: input.email ?? "",
+        phone: input.phone ?? "",
+        title: input.title,
+        location: input.location,
+        building: input.building,
+      }))
+
+      
+
+      const { data, error } = await ctx.supabase
+      .from('bookings')
+      .insert(bookings)
+      
+      if (error) {
+        throw new Error(error.message)
+      }
+      return data
+
+    }),
 
     getBookings: publicProcedure.input(z.object({
         date: z.string(),

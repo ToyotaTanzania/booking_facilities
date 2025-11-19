@@ -79,7 +79,7 @@ export function GuestBookingForm({ children }: IProps) {
   const [facility, setFacility] = useState<string>("");
 
   const [schedule, setSchedule] = useState<number>(0);
-  const [slots, setSlots] = useState([]);
+  const [slots, setSlots] = useState<Slot[]>([]);
 
   const debouncedDate = useDebounce(currentDate, 500);
 
@@ -87,9 +87,35 @@ export function GuestBookingForm({ children }: IProps) {
   const [facilityOpen, setFacilityOpen] = useState<boolean>(false);
   const [buildingOpen, setBuildingOpen] = useState<boolean>(false);
 
-  const debouncedLocation = useDebounce(form.getValues('location'), 500);
-  const debouncedBuilding = useDebounce(form.getValues('building'), 500);
-  const debouncedFacility = useDebounce(form.getValues('room'), 500);
+  // Narrow debounced values to the types expected by queries
+  const debouncedLocationRaw = useDebounce(form.getValues("location"), 500);
+  const debouncedBuildingRaw = useDebounce(form.getValues("building"), 500);
+  const debouncedFacilityRaw = useDebounce(form.getValues("room"), 500);
+
+  const debouncedLocation: string | null =
+    typeof debouncedLocationRaw === "string" && debouncedLocationRaw.trim() !== ""
+      ? debouncedLocationRaw
+      : null;
+
+  const debouncedBuilding: number | null = (() => {
+    const v = debouncedBuildingRaw;
+    if (typeof v === "number") return v;
+    if (typeof v === "string" && v.trim() !== "") {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    }
+    return null;
+  })();
+
+  const debouncedFacility: number | null = (() => {
+    const v = debouncedFacilityRaw;
+    if (typeof v === "number") return v;
+    if (typeof v === "string" && v.trim() !== "") {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    }
+    return null;
+  })();
 
   // Slot selection state - simplified approach
   const [selectionMode, setSelectionMode] = useState<
@@ -126,7 +152,7 @@ export function GuestBookingForm({ children }: IProps) {
 
   const utils = api.useUtils();
 
-  const { mutate: createBooking } = api.booking.create.useMutation({
+  const { mutate: createBooking } = api.booking.guestBooking.useMutation({
     onSuccess: async () => {
       toast.success("Booking created successfully");
       await utils.booking.getCalendarBookings.invalidate();
@@ -138,7 +164,7 @@ export function GuestBookingForm({ children }: IProps) {
 
   useEffect(() => {
     if (schedules) {
-      setSlots((schedules.slots as any) || []);
+      setSlots(((schedules.slots ?? []) as unknown as Slot[]) || []);
     }
   }, [schedules]);
 
@@ -260,8 +286,13 @@ export function GuestBookingForm({ children }: IProps) {
   );
 
   const onSubmit = (_values: TEventFormData) => {
-    console.log("Submitting");
-    console.log(_values);
+    const facility = facilities?.find(facility => facility.id === Number(_values.room))
+    console.log('facilities', facility)
+    createBooking({
+      ..._values,
+      schedule: facility.schedule,
+    });
+    form.reset()
 
     // if(loadingSlots) return
 
@@ -421,7 +452,7 @@ export function GuestBookingForm({ children }: IProps) {
                     open={locationOpen}
                     onOpenChange={(open) => setLocationOpen(open)}
                     type="location"
-                    value={field.value}
+                    value={String(field.value || "")}
                     onValueChange={field.onChange}
                   >
                     <ComboboxTrigger className="w-full" />
@@ -517,7 +548,13 @@ export function GuestBookingForm({ children }: IProps) {
                     onOpenChange={(open) => setBuildingOpen(open)}
                     type="building"
                     value={String(field.value || "")}
-                    onValueChange={(val) => field.onChange(Number(val) || 0)}
+                    onValueChange={(val) => {
+                      // Keep as string in form; convert to number for queries
+                      field.onChange(val);
+                      // Reset room when building changes
+                      form.setValue("room", "");
+                      setAmenities([]);
+                    }}
                   >
                     <ComboboxTrigger className="w-full" />
                     <ComboboxContent className="w-full">
@@ -615,13 +652,17 @@ export function GuestBookingForm({ children }: IProps) {
                     type="facility"
                     value={String(field.value || "")}
                     onValueChange={(val) => {
-                        const facility = facilities?.find(
-                          (f) => f.id === numeral(val).value(),
+                        // Update selected room in form (remains string id)
+                        field.onChange(val);
+                        const facilityId = Number(val);
+                        const matchedFacility = facilities?.find(
+                          (f) => f.id === facilityId,
                         );
-                        setSchedule(facility?.schedule || 0);
-                        field.onChange(val)
-                        if(schedules){
-                          setSlots(schedules.slots)
+                        setAmenities(matchedFacility?.amenities ?? []);
+                        setSchedule(matchedFacility?.schedule || 0);
+                        // If schedules already loaded, refresh local slots list
+                        if (schedules) {
+                          setSlots(((schedules.slots ?? []) as unknown as Slot[]) || []);
                         }
                     }}
                   >
@@ -678,9 +719,11 @@ export function GuestBookingForm({ children }: IProps) {
             name="slots"
             render={({ field }) => {
               const currentSlots =
-                slots ?? [];
+                (slots ?? []) as Slot[];
 
-              const selectedSlots = field.value ?? [];
+              const selectedSlots: string[] = Array.isArray(field.value)
+                ? field.value
+                : [];
 
               return (
                 <FormItem className="space-y-3">
@@ -703,7 +746,7 @@ export function GuestBookingForm({ children }: IProps) {
                     >
                       {currentSlots.length > 0 ? (
                         <div className="grid grid-cols-1 gap-1">
-                          {currentSlots.map((slot, index) => {
+                          {currentSlots.map((slot: Slot, index) => {
                             const value = String(slot?.id);
                             const isSelected = selectedSlots.includes(value);
                             const isInRange = isSlotInRange(index);
@@ -795,19 +838,16 @@ export function GuestBookingForm({ children }: IProps) {
                           </p>
                           <p className="mt-1 text-xs text-green-600">
                             {(() => {
-                              const currentSlots =
-                                slots ??
-                                [];
-                              const selectedSlotObjects = currentSlots.filter(
-                                (slot) =>
-                                  selectedSlots.includes(String(slot.id)),
+                              const currentSlots: Slot[] = (slots ?? []) as Slot[];
+                              const selectedSlotObjects: Slot[] = currentSlots.filter(
+                                (slot) => selectedSlots.includes(String(slot.id)),
                               );
 
                               if (selectedSlotObjects.length === 0)
                                 return "No slots found";
 
                               // Sort by slot order (assuming slots are in chronological order)
-                              const sortedSlots = selectedSlotObjects.sort(
+                              const sortedSlots: Slot[] = [...selectedSlotObjects].sort(
                                 (a, b) => {
                                   const aIndex = currentSlots.findIndex(
                                     (s) => s.id === a.id,
@@ -819,8 +859,8 @@ export function GuestBookingForm({ children }: IProps) {
                                 },
                               );
 
-                              const firstSlot = sortedSlots[0];
-                              const lastSlot =
+                              const firstSlot: Slot | undefined = sortedSlots[0];
+                              const lastSlot: Slot | undefined =
                                 sortedSlots[sortedSlots.length - 1];
 
                               // Check if slots are consecutive
@@ -828,19 +868,21 @@ export function GuestBookingForm({ children }: IProps) {
                                 sortedSlots.length > 1 &&
                                 sortedSlots.every((slot, index) => {
                                   if (index === 0) return true;
-                                  const prevSlot = sortedSlots[index - 1];
+                                  const prevSlot: Slot | undefined =
+                                    sortedSlots[index - 1];
+                                  if (!prevSlot) return true;
                                   const prevIndex = currentSlots.findIndex(
                                     (s) => s.id === prevSlot.id,
                                   );
                                   const currentIndex = currentSlots.findIndex(
                                     (s) => s.id === slot.id,
                                   );
-                                  return currentIndex === prevIndex + 1;
+                                  return prevIndex !== -1 && currentIndex === prevIndex + 1;
                                 });
 
-                              if (selectedSlots.length === 1) {
+                              if (selectedSlots.length === 1 && firstSlot) {
                                 return `${firstSlot.start} - ${firstSlot.end}`;
-                              } else if (isConsecutive) {
+                              } else if (isConsecutive && firstSlot && lastSlot) {
                                 return `${firstSlot.start} to ${lastSlot.end}`;
                               } else {
                                 // Show individual slots for non-consecutive selection

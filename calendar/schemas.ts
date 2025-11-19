@@ -4,6 +4,7 @@ export const eventSchema = z.object({
   // user: z.string(),
   location: z.union([z.string(),z.number()]).optional(),
   building: z.union([z.string(),z.number()]).optional(),
+  schedule: z.union([z.string(),z.number()]).optional(),
 
   title: z.string().optional(),
   email: z.string().optional(),
