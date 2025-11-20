@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import dayjs from "dayjs";
 
 import { useDebounce } from "@/hooks/use-debounce";
-
+import { useRouter } from "next/navigation";
 import {
   MiniCalendar,
   MiniCalendarDay,
@@ -43,6 +43,7 @@ import { api } from "@/trpc/react";
 import { toast } from "sonner";
 import numeral from "numeral";
 import { Input } from "@/components/ui/input";
+import { useSession } from "next-auth/react";
 
 interface IProps {
   children: React.ReactNode;
@@ -53,7 +54,9 @@ interface IProps {
 }
 type Slot = { id: number; start: string; end: string };
 
-export function GuestBookingForm() {
+export function BookingForm() {
+
+  const { data: session } = useSession()
 
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const form = useForm<TEventFormData>({
@@ -62,9 +65,6 @@ export function GuestBookingForm() {
       location: "",
       building: "",
       room: "",
-      name: "",
-      email: "",
-      phone: "",
       title: "",
       slots: [],
       // date: dayjs(date ?? undefined),
@@ -76,6 +76,7 @@ export function GuestBookingForm() {
   const [location, setLocation] = useState<string>("");
   const [amenities, setAmenities] = useState<any[]>([]);
   const [facility, setFacility] = useState<string>("");
+  const navigate = useRouter()
 
   const [schedule, setSchedule] = useState<number>(0);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -151,10 +152,11 @@ export function GuestBookingForm() {
 
   const utils = api.useUtils();
 
-  const { mutate: createBooking } = api.booking.guestBooking.useMutation({
+  const { mutate: createBooking } = api.booking.userBooking.useMutation({
     onSuccess: async () => {
       toast.success("Booking created successfully");
       await utils.booking.getCalendarBookings.invalidate();
+      navigate.push('/')
     },
     onError: () => {
       toast.error("Failed to create booking");
@@ -286,66 +288,15 @@ export function GuestBookingForm() {
 
   const onSubmit = (_values: TEventFormData) => {
     const facility = facilities?.find(facility => facility.id === Number(_values.room))
-    console.log('facilities', facility)
+   
     createBooking({
       ..._values,
       schedule: facility.schedule,
     });
+
     form.reset()
-
-    // if(loadingSlots) return
-
-    // const currentFacility = allFacilities?.find((f) => f.id === Number(_values.room));
-    // // TO DO: Create use-add-event hook
-    // const [room, schedule] = [currentFacility?.id.toString(), currentFacility?.schedule.toString()];
-
-    // const startSlotId = _values.slots?.[0] ?? ""
-    // const endSlotId = _values.slots?.[ _values.slots.length -1 ] ?? ""
-
-    // const slots = allSlots?.[String(_values.room)] ?? []
-
-    // const startSlot = slots?.find((s) => s.id === +startSlotId) ?? ""
-    // const endSlot = slots?.find((s) => s.id === +endSlotId) ?? ""
-
-    // console.log(startSlot, endSlot)
-
-    // createBooking({
-    //   slots: _values.slots?.map((s) => Number(s)) ?? [],
-    //   date: _values.date.toISOString(),
-    //   facility: Number(room),
-    //   schedule: Number(schedule),
-    //   startsAt: startSlot?.start ?? "",
-    //   endsAt: endSlot?.end ?? ""
-    // });
-    // form.reset();
-    // onClose();
+    
   };
-
-  // useEffect(() => {
-  //   // Only reset the date, preserve other form values
-  //   form.setValue("date", dayjs(currentDate) ?? dayjs());
-  // }, [currentDate, form]);
-
-  // Reset form when dialog opens/closes
-  // useEffect(() => {
-  //   if (isOpen) {
-  //     // Reset form when dialog opens
-  //     form.reset({
-  //       location: "",
-  //       building: "",
-  //       room: "",
-  //       slots: [],
-  //       date: dayjs(currentDate) ?? dayjs(),
-  //     });
-  //     // Reset local state
-  //     setLocation("");
-  //     setBuilding(0);
-  //     setAmenities([]);
-  //     setSelectionMode("none");
-  //     setRangeStart(null);
-  //     setHoveredIndex(null);
-  //   }
-  // }, [isOpen, form, currentDate]);
 
   return (
     <div>
@@ -374,48 +325,6 @@ export function GuestBookingForm() {
                     </MiniCalendarDays>
                     <MiniCalendarNavigation direction="next" />
                   </MiniCalendar>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input type="email" placeholder="email" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-           <FormField
-           control={form.control}
-           name="name"
-           render={({ field }) => (
-             <FormItem>
-               <FormLabel>Name</FormLabel>
-               <FormControl>
-                  <Input type="text" placeholder="name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone</FormLabel>
-                <FormControl>
-                  <Input type="tel" placeholder="phone" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -9,18 +9,18 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-  if (!session) {
-    redirect("/auth/signin");
-  }
+  // const session = await auth();
+  // if (!session) {
+  //   redirect("/auth/signin");
+  // }
 
-  type SupabaseSession = Session & { supabase?: { role?: string } };
-  const supaSession = session as SupabaseSession;
-  const role = supaSession.supabase?.role;
+  // type SupabaseSession = Session & { supabase?: { role?: string } };
+  // const supaSession = session as SupabaseSession;
+  // const role = supaSession.supabase?.role;
 
   return (
     <div className="relative flex min-h-screen">
-      {role === "admin" && <Sidebar />}
+      {/* {role === "admin" && <Sidebar />} */}
       
       <main className="flex-1 overflow-y-auto bg-muted/10 pb-16">
         <div className="flex-1 space-y-4 p-2">

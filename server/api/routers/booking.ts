@@ -146,10 +146,47 @@ export const bookingRouter = createTRPCRouter({
       const { data, error } = await ctx.supabase
       .from('bookings')
       .insert(bookings)
+
+      if (error) {
+        throw new Error(error.message)
+      }
+      return data
+
+    }),
+
+    userBooking: protectedProcedure
+    .input(eventSchema)
+    .mutation(async ({ input, ctx }) => {
+
+      const code = uuidv4()
+
+      const ctxUser = ctx.session.supabase.user
+  
+      const bookings = input.slots.map(slot => ({
+        slot: slot,
+        date: input.date,
+        schedule: input.schedule,
+        facility: input.room,
+        user: ctxUser.id,  
+        description: input.title ?? ctxUser.email ?? "",
+        status: 'pending',
+        code: code,
+        name: ctxUser.name ?? "",
+        email: ctxUser.email ?? "",
+        phone: ctxUser.user.phone ?? "",
+        title: input.title,
+        location: input.location,
+        building: input.building,
+      }))
+
+      const { data, error } = await ctx.supabase
+      .from('bookings')
+      .insert(bookings)
       
       if (error) {
         throw new Error(error.message)
       }
+
       return data
 
     }),
