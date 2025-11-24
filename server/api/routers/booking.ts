@@ -535,8 +535,6 @@ export const bookingRouter = createTRPCRouter({
   })).query(async ({ input, ctx }) => {
     const { date, building, location, facility } = input
 
-    console.log(input)
-
     const query = ctx.supabase
     .from('bookings')
     // .select('*, facility(*)')
@@ -549,27 +547,9 @@ export const bookingRouter = createTRPCRouter({
       query.eq('facility', facility)
     }
     if(!_.isEmpty(building) || (_.isNumber(building) && building > 0)) {
-      const { data: facilities } = await ctx.supabase
-        .from('facilities')
-        .select('id')
-        .eq('building', building);
-      const facilityIds = facilities?.map(f => f.id) ?? [];
-      query.in('facility', facilityIds);
+      query.eq('building', building)
     }else if(!_.isEmpty(location)){
-      const buildingQuery = ctx.supabase
-      .from('buildings')
-      .select('id')
-      .ilike('location', `%${location}%`)
-  
-      const { data: buildings } = await buildingQuery
-      const buildingIds = buildings?.map(b => b.id) ?? [];
-      const { data: facilities } = await ctx.supabase
-        .from('facilities')
-        .select('id')
-        .in('building', buildingIds);
-
-        const facilityIds = facilities?.map(f => f.id) ?? [];
-        query.in('facility', facilityIds);
+      query.ilike('location', `%${location}%`)
     }
 
     const { data, error } = await query

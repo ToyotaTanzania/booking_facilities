@@ -49,6 +49,7 @@ export const facilityRouter = createTRPCRouter({
         pendingCount: pendingCountByFacility[f.id] || 0,
       }));
     }),
+
   list: publicProcedure
     .query(async ({ ctx }) => {
       const { data, error } = await ctx.supabase
@@ -96,6 +97,17 @@ export const facilityRouter = createTRPCRouter({
         .from("facilities")
         .select(`*,building:buildings(*)`);
 
+      if(location){
+        const { data: buildings } = await ctx.supabase
+          .from("buildings")
+          .select(`*`)
+          .ilike("location", `%${location}%`);
+
+        if(buildings && buildings.length > 0){
+          query.in('building', buildings.map((b: any) => b.id))
+        }
+      }
+
       if (location) {
         query.eq("building.location", location);
       }
@@ -108,12 +120,28 @@ export const facilityRouter = createTRPCRouter({
         query.eq("id", facility);
       }
 
+      const { data: responsible, error: responsibleError } = await ctx.supabase
+        .from("responsible_person")
+        .select(`*`);
+
+      if (responsibleError) throw responsibleError;
+
+      const { data: slots, error: slotsError } = await ctx.supabase
+        .from("slots")
+        .select(`*`)
+        .order("start_time");
+
+      if (slotsError) throw slotsError;
+
       const { data, error } = await query;
       if (error) throw error;
 
       return data.map((facility) => ({
         ...facility,
         building: facility.building,
+        responsible: responsible?.find((person) => person.facility === facility.id) || null,
+        slots: slots?.filter((slot) => slot.schedule === facility.schedule) || null,
+
       }));
 
     }),

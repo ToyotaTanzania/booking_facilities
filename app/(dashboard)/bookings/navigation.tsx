@@ -22,26 +22,6 @@ import { Plus } from "lucide-react";
 // Simple logo component for the navbar
 const Logo = (props: React.SVGAttributes<SVGElement>) => {
   return (
-    // <svg  viewBox='0 0 324 323' fill='currentColor' xmlns='http://www.w3.org/2000/svg' {...props}>
-    //   <rect
-    //     x='88.1023'
-    //     y='144.792'
-    //     width='151.802'
-    //     height='36.5788'
-    //     rx='18.2894'
-    //     transform='rotate(-38.5799 88.1023 144.792)'
-    //     fill='currentColor'
-    //   />
-    //   <rect
-    //     x='85.3459'
-    //     y='244.537'
-    //     width='151.802'
-    //     height='36.5788'
-    //     rx='18.2894'
-    //     transform='rotate(-38.5799 85.3459 244.537)'
-    //     fill='currentColor'
-    //   />
-    // </svg>
     <Image
       src="https://ik.imagekit.io/ttltz/brands/one/one-colored_H32SW3x_4.png?updatedAt=1757667292237"
       alt="Karimjee Logo"
@@ -237,16 +217,20 @@ export const Navigation = React.forwardRef<HTMLElement, Navbar01Props>(
           {/* Right side */}
           <div className="flex items-center gap-3">
             <div>
-              <AddEventDialog >
+              {/* <AddEventDialog >
                 <Button className="w-full sm:w-auto">
                   <Plus />
                   Create
                 </Button>
-              </AddEventDialog>
+              </AddEventDialog> */}
+              <Link href="/create/guest">
+                <Button className="w-full sm:w-auto cursor-pointer">
+                  <Plus />
+                  Create
+                </Button>
+              </Link>
             </div>
-            <div>
-              <SignOutButton />
-            </div>
+            <div>{/* <SignOutButton /> */}</div>
           </div>
         </div>
       </header>
