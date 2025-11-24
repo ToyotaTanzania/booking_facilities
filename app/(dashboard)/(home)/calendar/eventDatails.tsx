@@ -27,11 +27,11 @@ import { useSession } from "next-auth/react";
 import { google, office365, outlook } from "calendar-link";
 
 // Local helper drawers
-function RejectDrawer({ resolvedBooking, note, setNote, onReject }: { resolvedBooking: any, note: string, setNote: (v: string) => void, onReject: () => void }) {
-  const [open, setOpen] = useState(false);
+function RejectDrawer({ resolvedBooking, note, setNote, onReject, open, onOpenChange }: { resolvedBooking: any, note: string, setNote: (v: string) => void, onReject: () => void, open?: boolean, onOpenChange?: (open: boolean) => void }) {
+  const [localOpen, setLocalOpen] = useState(false);
   return (
-    <Drawer open={open} onOpenChange={setOpen} direction="right" nested>
-      <Button variant="destructive" onClick={() => setOpen(true)}>Reject</Button>
+    <Drawer open={open ?? localOpen} onOpenChange={onOpenChange ?? setLocalOpen} direction="right" nested>
+      <Button variant="destructive" onClick={() => (onOpenChange ? onOpenChange(true) : setLocalOpen(true))}>Reject</Button>
       <DrawerContent className="p-0 h-full">
         <DrawerHeader className="p-4">
           <DrawerTitle>Reject Booking</DrawerTitle>
@@ -45,10 +45,10 @@ function RejectDrawer({ resolvedBooking, note, setNote, onReject }: { resolvedBo
           </div>
         </div>
         <DrawerFooter className="p-4">
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => (onOpenChange ? onOpenChange(false) : setLocalOpen(false))}>Cancel</Button>
           <Button
             disabled={!resolvedBooking}
-            onClick={() => { onReject(); setOpen(false); }}
+            onClick={() => { onReject(); (onOpenChange ? onOpenChange(false) : setLocalOpen(false)); }}
             variant="destructive"
           >
             Confirm Reject
@@ -64,31 +64,35 @@ function RescheduleDrawer({
   setTitle,
   newDate,
   setNewDate,
-  newSlotId,
-  setNewSlotId,
+  newSlotIds,
+  setNewSlotIds,
   slotsForSchedule,
   bookedSlotIds,
   note,
   setNote,
   onRescheduleConfirm,
+  open,
+  onOpenChange,
 }: {
   title: string;
   setTitle: (v: string) => void;
   newDate: string;
   setNewDate: (v: string) => void;
-  newSlotId: number | undefined;
-  setNewSlotId: (v: number | undefined) => void;
+  newSlotIds: number[];
+  setNewSlotIds: (v: number[]) => void;
   slotsForSchedule: any[];
   bookedSlotIds: number[];
   note: string;
   setNote: (v: string) => void;
   onRescheduleConfirm: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const selectedSlot = (slotsForSchedule || []).find((x: any) => Number(x.id) === Number(newSlotId));
+  const [localOpen, setLocalOpen] = useState(false);
+  const selectedSlots = (slotsForSchedule || []).filter((x: any) => (newSlotIds || []).includes(Number(x.id)));
   return (
-    <Drawer open={open} onOpenChange={setOpen} direction="right" nested>
-      <Button variant="secondary" onClick={() => setOpen(true)}>Open Reschedule</Button>
+    <Drawer open={open ?? localOpen} onOpenChange={onOpenChange ?? setLocalOpen} direction="right" nested>
+      <Button variant="secondary" onClick={() => (onOpenChange ? onOpenChange(true) : setLocalOpen(true))}>Open Reschedule</Button>
       <DrawerContent className="p-0 h-full">
         <DrawerHeader className="p-4">
           <DrawerTitle>Reschedule Booking</DrawerTitle>
@@ -114,7 +118,49 @@ function RescheduleDrawer({
                 <MiniCalendarNavigation direction="next" />
               </MiniCalendar>
             </div>
-            {/* Slot selection UI intentionally simplified while layout changes are verified */}
+            <div className="space-y-2">
+              <Label>Available Slots</Label>
+              <div className="grid grid-cols-3 gap-1">
+                {(slotsForSchedule || []).map((slot: any) => {
+                  const isBooked = (bookedSlotIds || []).includes(Number(slot.id));
+                  const isSelected = (newSlotIds || []).includes(Number(slot.id));
+                  const base = "px-1 py-1 text-xs rounded-md border transition-colors";
+                  const stateClass = isBooked
+                    ? "bg-rose-100 text-rose-700 border-rose-200 cursor-not-allowed opacity-60"
+                    : isSelected
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-muted text-foreground hover:bg-muted/70";
+                  return (
+                    <button
+                      key={slot.id}
+                      type="button"
+                      className={`${base} ${stateClass}`}
+                      disabled={isBooked}
+                      onClick={() => {
+                        const idNum = Number(slot.id);
+                        if ((newSlotIds || []).includes(idNum)) {
+                          setNewSlotIds((newSlotIds || []).filter((id) => id !== idNum));
+                        } else {
+                          setNewSlotIds([...(newSlotIds || []), idNum]);
+                        }
+                      }}
+                      aria-pressed={isSelected}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="leading-none">{slot.start} - {slot.end}</span>
+                        {isBooked && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-rose-500" />}
+                        {isSelected && !isBooked && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-white" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedSlots && selectedSlots.length > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  Selected ({selectedSlots.length}): {selectedSlots.map((s: any) => `${s.start} - ${s.end}`).join(", ")}
+                </div>
+              )}
+            </div>
             <div className="space-y-2">
               <Label htmlFor="rescheduleNotes">Notes</Label>
               <Textarea id="rescheduleNotes" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notes for reschedule" />
@@ -122,10 +168,10 @@ function RescheduleDrawer({
           </div>
         </div>
         <DrawerFooter className="p-4">
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => (onOpenChange ? onOpenChange(false) : setLocalOpen(false))}>Cancel</Button>
           <Button
-            disabled={!newDate || !newSlotId}
-            onClick={() => { onRescheduleConfirm(); setOpen(false); }}
+            disabled={!newDate || !newSlotIds || newSlotIds.length === 0}
+            onClick={() => { onRescheduleConfirm(); (onOpenChange ? onOpenChange(false) : setLocalOpen(false)); }}
             variant="secondary"
           >
             Reschedule & Confirm
@@ -216,6 +262,10 @@ const EventDetails = ({
   // Booked slots for this facility/date
   const bookedSlotIdsArr = useMemo(() => {
     return ((Array.isArray(dayBookings) ? dayBookings : []) as any[])
+      .filter((b) => {
+        const status = (b as any)?.status;
+        return status !== 'rejected';
+      })
       .map((b) => {
         if (typeof b === "number") return b;
         if (typeof b === "string") return Number(b);
@@ -233,7 +283,7 @@ const EventDetails = ({
   const [manualName, setManualName] = useState<string>(event?.owner?.name || "");
   const [manualPhone, setManualPhone] = useState<string>(event?.owner?.phone || "");
   const [newDate, setNewDate] = useState<string>(event?.date || "");
-  const [newSlotId, setNewSlotId] = useState<number | undefined>(undefined);
+  const [newSlotIds, setNewSlotIds] = useState<number[]>([]);
 
   // Change booked user modal state & debounced email lookup
   const [changeUserOpen, setChangeUserOpen] = useState(false);
@@ -241,6 +291,8 @@ const EventDetails = ({
   const [debouncedEmail, setDebouncedEmail] = useState<string>("");
   const [foundUserId, setFoundUserId] = useState<string | null>(null);
   const [emailSearched, setEmailSearched] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
   // Clear manual fields as soon as the user starts typing a new email
   const handleEmailChange = (value: string) => {
     setEmailQuery(value);
@@ -401,138 +453,7 @@ const EventDetails = ({
 
               <Separator />
 
-              {/* Responsible actions */}
-              {isResponsible && (
-                <div className="space-y-4">
-                  <div className="text-sm font-medium">Responsible Actions</div>
-
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Change Booked User</Label>
-                      <Drawer open={changeUserOpen} onOpenChange={setChangeUserOpen} direction="right" nested>
-                        <Button variant="default" onClick={() => setChangeUserOpen(true)}>Open Change User</Button>
-                        <DrawerContent className="p-0 h-full">
-                          <DrawerHeader className="p-4">
-                            <DrawerTitle>Change Booked User</DrawerTitle>
-                          </DrawerHeader>
-                          <div className="flex-1 px-4 flex  justify-center">
-                            <div className="w-full max-w-md space-y-3">
-                              <div className="space-y-2">
-                                <Label htmlFor="emailLookup">Email</Label>
-                                <Input
-                                  id="emailLookup"
-                                  value={emailQuery}
-                                  onChange={(e) => handleEmailChange(e.target.value)}
-                                  placeholder="user@example.com"
-                                />
-                                {isSearchingUser && <div className="text-xs text-muted-foreground">Searching...</div>}
-                                {!isSearchingUser && emailSearched && lookedUpUser && (
-                                  <div className="text-xs text-green-600">Existing user found. Details populated.</div>
-                                )}
-                                {!isSearchingUser && emailSearched && !lookedUpUser && debouncedEmail && (
-                                  <div className="text-xs text-muted-foreground">No user found. Provide details to create.</div>
-                                )}
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="nameInput">Name</Label>
-                                <Input id="nameInput" value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Full name" />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="phoneInput">Phone</Label>
-                                <Input id="phoneInput" value={manualPhone} onChange={(e) => setManualPhone(e.target.value)} placeholder="Phone number" />
-                              </div>
-                            </div>
-                          </div>
-                          <DrawerFooter className="p-4">
-                            <Button variant="outline" onClick={() => setChangeUserOpen(false)}>Cancel</Button>
-                            <Button
-                              disabled={!resolvedBooking || !debouncedEmail || (!foundUserId && !manualName)}
-                              onClick={() => {
-                                if (!resolvedBooking || !debouncedEmail) return;
-                                if (foundUserId) {
-                                  changeUserMutation.mutate({
-                                    slot: resolvedBooking.slot.id,
-                                    facility: resolvedBooking.facility.id,
-                                    date: resolvedBooking.date,
-                                    user: foundUserId,
-                                    description: title,
-                                    comment: note || undefined,
-                                  });
-                                  setChangeUserOpen(false);
-                                } else {
-                                  // Create the user first, then assign
-                                  createUserMutation.mutate({
-                                    email: debouncedEmail,
-                                    name: manualName || debouncedEmail,
-                                    phone: manualPhone || null,
-                                  });
-                                  setChangeUserOpen(false);
-                                }
-                              }}
-                            >
-                              {foundUserId ? "Assign Existing User" : "Create & Assign"}
-                            </Button>
-                          </DrawerFooter>
-                        </DrawerContent>
-                      </Drawer>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Reschedule Booking</Label>
-                      <RescheduleDrawer
-                        title={title}
-                        setTitle={setTitle}
-                        newDate={newDate}
-                        setNewDate={setNewDate}
-                        newSlotId={newSlotId}
-                        setNewSlotId={setNewSlotId}
-                        slotsForSchedule={slotsForSchedule}
-                        bookedSlotIds={bookedSlotIdsArr}
-                        note={note}
-                        setNote={setNote}
-                        onRescheduleConfirm={() => {
-                          if (!resolvedBooking || !newDate || !newSlotId) return;
-                          rescheduleConfirmMutation.mutate({ id: resolvedBooking.id, date: newDate, slot: newSlotId!, comment: note || undefined });
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                    <div className="space-y-2">
-                      <Label>Decision Notes</Label>
-                      <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notes for approve/reject" />
-                      <div className="flex gap-2">
-                        <Button
-                          disabled={!resolvedBooking}
-                          onClick={() => {
-                            if (!resolvedBooking) return;
-                            approveMutation.mutate({
-                              slot: resolvedBooking.slot.id,
-                              facility: resolvedBooking.facility.id,
-                              date: resolvedBooking.date,
-                              schedule: resolvedBooking.schedule,
-                              comment: note || undefined,
-                            });
-                          }}
-                        >
-                          Approve
-                        </Button>
-                        {/* Reject now opens a drawer */}
-                        <RejectDrawer resolvedBooking={resolvedBooking} note={note} setNote={setNote} onReject={() => {
-                          if (!resolvedBooking) return;
-                          rejectMutation.mutate({
-                            slot: resolvedBooking.slot.id,
-                            facility: resolvedBooking.facility.id,
-                            date: resolvedBooking.date,
-                            comment: note || undefined,
-                          });
-                        }} />
-                      </div>
-                    </div>
-
-                  
-                </div>
-              )}
+            
 
               {/* Owner actions */}
               {isOwner && (
@@ -579,7 +500,7 @@ const EventDetails = ({
                 </div>
               )}
 
-              <Separator />
+             
 
               {/* Export options */}
               <div className="space-y-2">
@@ -592,6 +513,59 @@ const EventDetails = ({
             </div>
 
             <SheetFooter>
+                
+              <div className="flex flex-wrap justify-end gap-2 mr-2">
+                <Separator />
+                {isResponsible && (
+                    <div>
+                <Button
+                  variant="secondary"
+                   className="w-full"
+                  disabled={!resolvedBooking}
+                  onClick={() => setChangeUserOpen(true)}
+                >
+                  Change User
+                </Button>
+                <Button
+                  variant="secondary"
+                   className="w-full"
+                  disabled={!resolvedBooking}
+                  onClick={() => setRescheduleOpen(true)}
+                >
+                  Reschedule
+                </Button>
+                <Button
+                  disabled={!resolvedBooking}
+                    className="w-full"
+                  onClick={() => {
+                    const scheduleId = resolvedBooking?.schedule;
+                    if (!resolvedBooking || typeof scheduleId !== "number") {
+                      toast.error("Missing schedule identifier for approval.");
+                      return;
+                    }
+                    approveMutation.mutate({
+                      slot: Number(resolvedBooking.slot.id),
+                      facility: Number(resolvedBooking.facility.id),
+                      date: resolvedBooking.date,
+                      schedule: scheduleId,
+                      comment: note || undefined,
+                    });
+                  }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  disabled={!resolvedBooking}
+                  onClick={() => setRejectOpen(true)}
+                >
+                  Reject
+                </Button>
+                </div>
+              )}
+              </div>
+              
               <SheetClose asChild>
                 <Button type="button" variant="outline">Close</Button>
               </SheetClose>
