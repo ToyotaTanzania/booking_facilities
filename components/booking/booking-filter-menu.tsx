@@ -29,6 +29,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { MiniCalendar, MiniCalendarNavigation, MiniCalendarDays, MiniCalendarDay } from "@/components/ui/mini-calendar";
+import { format, parseISO } from "date-fns";
 import { Calendar, Filter, Search, X } from "lucide-react";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
@@ -161,26 +163,31 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                       Date
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                        className="w-full"
-                        onChange={(e) => {
-                          const newDate = e.target.value;
+                      <MiniCalendar
+                        value={field.value ? parseISO(field.value) : undefined}
+                        onValueChange={(d) => {
+                          const newDate = d ? format(d, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
                           field.onChange(newDate);
-                          // Auto-apply date change
-                          const newFilters = {
+                          const newFilters: BookingFilters = {
                             ...filters,
                             date: newDate,
                           };
                           setFilters(newFilters);
                         }}
-                      />
+                        days={7}
+                        className="justify-between"
+                      >
+                        <MiniCalendarNavigation direction="prev" />
+                        <MiniCalendarDays>
+                          {(date) => <MiniCalendarDay date={date} />}
+                        </MiniCalendarDays>
+                        <MiniCalendarNavigation direction="next" />
+                      </MiniCalendar>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
               {/* Location Filter */}
               <FormField
@@ -190,16 +197,14 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                   <FormItem>
                     <FormLabel>Location</FormLabel>
                     <Select
-                      value={field.value || ""}
+                      value={field.value || "all"}
                       onValueChange={(value) => {
                         field.onChange(value);
                         // Auto-apply location change
-                        const newFilters = {
+                        const selected = locations?.find((loc) => loc.name === value);
+                        const newFilters: BookingFilters = {
                           ...filters,
-                          location: value === "all" ? null : {
-                            id: locations?.find(loc => loc.name === value)?.id || 0,
-                            name: value,
-                          },
+                          location: value === "all" ? null : (selected ? { id: selected.id, name: selected.name } : { id: 0, name: value }),
                           building: null, // Reset building when location changes
                           facility: null, // Reset facility when location changes
                         };
@@ -236,16 +241,14 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                   <FormItem>
                     <FormLabel>Building</FormLabel>
                     <Select
-                      value={field.value || ""}
+                      value={field.value || "all"}
                       onValueChange={(value) => {
                         field.onChange(value);
                         // Auto-apply building change
-                        const newFilters = {
+                        const selected = filteredBuildings.find((building) => building.name === value);
+                        const newFilters: BookingFilters = {
                           ...filters,
-                          building: value === "all" ? null : {
-                            id: filteredBuildings.find(building => building.name === value)?.id || 0,
-                            name: value,
-                          },
+                          building: value === "all" ? null : (selected ? { id: selected.id, name: selected.name } : { id: 0, name: value }),
                           facility: null, // Reset facility when building changes
                         };
                         setFilters(newFilters);
@@ -283,16 +286,14 @@ export function BookingFilterMenu({ className }: BookingFilterMenuProps) {
                   <FormItem>
                     <FormLabel>Facility</FormLabel>
                     <Select
-                      value={field.value || ""}
+                      value={field.value || "all"}
                       onValueChange={(value) => {
                         field.onChange(value);
                         // Auto-apply facility change
-                        const newFilters = {
+                        const selected = filteredFacilities.find((facility) => facility.name === value);
+                        const newFilters: BookingFilters = {
                           ...filters,
-                          facility: value === "all" ? null : {
-                            id: filteredFacilities.find(facility => facility.name === value)?.id || 0,
-                            name: value,
-                          },
+                          facility: value === "all" ? null : (selected ? { id: selected.id, name: selected.name } : { id: 0, name: value }),
                         };
                         setFilters(newFilters);
                       }}

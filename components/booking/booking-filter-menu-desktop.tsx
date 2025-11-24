@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { MiniCalendar, MiniCalendarNavigation, MiniCalendarDays, MiniCalendarDay } from "@/components/ui/mini-calendar";
+import { format, parseISO } from "date-fns";
 import { Calendar, Filter, Search, X, RotateCcw } from "lucide-react";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
@@ -60,7 +62,7 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
       date: filters.date,
       location: filters.location?.name || "all",
       building: filters.building?.name || "all",
-      facility: filters.facility || "all",
+      facility: filters.facility?.name || "all",
     },
   });
 
@@ -73,40 +75,25 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
     resetFilters();
     form.reset({
       date: new Date().toISOString().split('T')[0],
-      location: {
-        id: 0,
-        name: "",
-      },
-      building: null,
-      facility: {
-        id: 0,
-        name: "",
-      },
+      location: "all",
+      building: "all",
+      facility: "all",
     });
     toast.success("Filters reset successfully");
   };
 
   const handleClearFilters = () => {
-    const clearedFilters = {
+    const clearedFilters: BookingFilters = {
       date: new Date().toISOString().split('T')[0],
-      location: {
-        id: 0,
-        name: "",
-      },
+      location: null,
       building: null,
       facility: null,
     };
     setFilters(clearedFilters);
     form.reset({
       date: clearedFilters.date,
-      location: {
-        id: 0,
-        name: "",
-      },
-      building: {
-        id: 0,
-        name: "",
-      },
+      location: "all",
+      building: "all",
       facility: "all",
     });
     toast.success("Filters cleared successfully");
@@ -140,21 +127,26 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                     Date
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      className="w-full"
-                      onChange={(e) => {
-                        const newDate = e.target.value;
+                    <MiniCalendar
+                      value={field.value ? parseISO(field.value) : undefined}
+                      onValueChange={(d) => {
+                        const newDate = d ? format(d, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
                         field.onChange(newDate);
-                        // Auto-apply date change
-                        const newFilters = {
+                        const newFilters: BookingFilters = {
                           ...filters,
                           date: newDate,
                         };
                         setFilters(newFilters);
                       }}
-                    />
+                      days={7}
+                      className="justify-between"
+                    >
+                      <MiniCalendarNavigation direction="prev" />
+                      <MiniCalendarDays>
+                        {(date) => <MiniCalendarDay date={date} />}
+                      </MiniCalendarDays>
+                      <MiniCalendarNavigation direction="next" />
+                    </MiniCalendar>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -169,25 +161,20 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                 <FormItem>
                   <FormLabel className="text-sm">Location</FormLabel>
                   <Select
-                    value={field.value || ""}
+                    value={field.value || "all"}
                     onValueChange={(value) => {
                       field.onChange(value);
                       // Auto-apply location change
-                      const newFilters = {
+                      const selected = locations?.find((loc) => loc.name === value);
+                      const newFilters: BookingFilters = {
                         ...filters,
-                        location: value === "all" ? null : {
-                          id: 0,
-                          name: value,
-                        },
+                        location: value === "all" ? null : (selected ? { id: selected.id, name: selected.name } : { id: 0, name: value }),
                         building: null, // Reset building when location changes
                         facility: null, // Reset facility when location changes
                       };
                       setFilters(newFilters);
                       // Update form to reflect the reset values
-                      form.setValue("building", {
-                        id: 0,
-                        name: "",
-                      });
+                      form.setValue("building", "all");
                       form.setValue("facility", "all");
                     }}
                   >
@@ -218,24 +205,19 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                 <FormItem>
                   <FormLabel className="text-sm">Building</FormLabel>
                   <Select
-                    value={field.value || ""}
+                    value={field.value || "all"}
                     onValueChange={(value) => {
                       field.onChange(value);
                       // Auto-apply building change
-                      const newFilters = {
+                      const selected = filteredBuildings.find((b) => b.name === value);
+                      const newFilters: BookingFilters = {
                         ...filters,
-                        building: value === "all" ? null : {
-                          id: 0,
-                          name: value,
-                        },
+                        building: value === "all" ? null : (selected ? { id: selected.id, name: selected.name } : { id: 0, name: value }),
                         facility: null, // Reset facility when building changes
                       };
                       setFilters(newFilters);
                       // Update form to reflect the reset value
-                      form.setValue("facility", {
-                        id: 0,
-                        name: "",
-                      });
+                      form.setValue("facility", "all");
                     }}
                     disabled={!filters.location}
                   >
@@ -268,16 +250,14 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                 <FormItem>
                   <FormLabel className="text-sm">Facility</FormLabel>
                   <Select
-                    value={field.value || ""}
+                    value={field.value || "all"}
                     onValueChange={(value) => {
                       field.onChange(value);
                       // Auto-apply facility change
-                      const newFilters = {
+                      const selected = filteredFacilities.find((f) => f.name === value);
+                      const newFilters: BookingFilters = {
                         ...filters,
-                        facility: value === "all" ? null : {
-                          id: 0,
-                          name: value,
-                        },
+                        facility: value === "all" ? null : (selected ? { id: selected.id, name: selected.name } : { id: 0, name: value }),
                       };
                       setFilters(newFilters);
                     }}
@@ -293,7 +273,7 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
                     <SelectContent>
                       <SelectItem value="all">All Facilities</SelectItem>
                       {filteredFacilities.map((facility) => (
-                        <SelectItem key={facility.name} value={facility.id}>
+                        <SelectItem key={facility.name} value={facility.name || ""}>
                           {_.capitalize(facility.name)}
                         </SelectItem>
                       ))}
@@ -343,17 +323,17 @@ export function BookingFilterMenuDesktop({ className }: BookingFilterMenuDesktop
           <div className="flex flex-wrap gap-2">
             {filters.location && (
               <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-md">
-                Location: {filters.location}
+                Location: {filters.location.name}
               </span>
             )}
             {filters.building && (
               <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-md">
-                Building: {filters.building}
+                Building: {filters.building.name}
               </span>
             )}
             {filters.facility && (
               <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-md">
-                Facility: {filters.facility}
+                Facility: {filters.facility.name}
               </span>
             )}
           </div>

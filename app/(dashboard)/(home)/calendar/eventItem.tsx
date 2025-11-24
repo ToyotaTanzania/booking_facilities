@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
 
-import { Status, StatusIndicator, StatusLabel } from "@/src/components/kibo-ui/status";
+import {
+  Status,
+  StatusIndicator,
+  StatusLabel,
+} from "@/src/components/kibo-ui/status";
+import EventDetails from "./eventDatails";
 
 const Colors = {
   rejected: "#F87171",
@@ -21,7 +26,7 @@ const StatusMap = {
   approved: "online",
   confirmed: "online",
   pending: "degraded",
-}
+};
 
 type statuses = keyof typeof Colors;
 
@@ -63,56 +68,46 @@ const EventItem = ({ event }: { event: any }) => {
   const createDateFromEventDateAndTime = (date: string, time: string) => {
     const parsedDate = parseISO(date);
     const parsedTime = parseISO(time);
-    return new Date(parsedDate.setHours(parsedTime.getHours(), parsedTime.getMinutes(), parsedTime.getSeconds()));
-  }
+    return new Date(
+      parsedDate.setHours(
+        parsedTime.getHours(),
+        parsedTime.getMinutes(),
+        parsedTime.getSeconds(),
+      ),
+    );
+  };
 
   const status: statuses = event.status as statuses;
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="text-xs flex items-start gap-1 flex-col">
-        <span className="font-medium">{event?.owner?.name || ""}</span>
-        <span className="font-medium">{event?.name}</span>
-      </div>
+     <EventDetails event={event}>
+     
+        <div className="flex flex-col items-start gap-1 text-xs">
+          <span className="font-medium">{event?.owner?.name || ""}</span>
+          <span className="font-medium">{event?.name}</span>
+        </div>
 
-      {/* <Badge
-          className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-          style={{
-            backgroundColor: Colors[status] || Colors.default,
-            color: "#ffffff",
-            borderColor: Colors[status] || Colors.default,
-          }}
-        >
-          {capitalize(status)}
-        </Badge> */}
+        <div className="flex items-center justify-between">
+          {formatDate(new Date(event.date))}
+        </div>
 
-      {/* <div className="text-muted-foreground text-xs">
-       
-      </div> */}
+        <Status status={StatusMap[status] || "default"}>
+          <StatusIndicator />
+          <StatusLabel className="font-mono">
+            {formatTime(event.start)} – {formatTime(event.end)}
+          </StatusLabel>
+        </Status>
 
-      <div className="flex items-center justify-between">
-         {formatDate(new Date(event.date))}
-      </div>
-
-      <Status status={
-        StatusMap[status] || "default"
-      }>
-        <StatusIndicator />
-        <StatusLabel className="font-mono">
-          {formatTime(event.start)} – {formatTime(event.end)}
-        </StatusLabel>
-      </Status>
-
-      <div className="flex items-center gap-2">
-        <Button
-          onClick={OutlookLink}
-          variant="ghost"
-          className="h-6 px-2 text-xs cursor-pointer"
-        >
-          <Calendar className="mr-1 h-3 w-3 " /> Add to Calendar
-        </Button>
-      </div>
-    </div>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={OutlookLink}
+            variant="ghost"
+            className="h-6 cursor-pointer px-2 text-xs"
+          >
+            <Calendar className="mr-1 h-3 w-3" /> Add to Calendar
+          </Button>
+        </div>
+      </EventDetails>
   );
 };
 

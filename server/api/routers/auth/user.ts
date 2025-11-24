@@ -16,6 +16,21 @@ export const userRouter = createTRPCRouter({
     return data;
   }),
 
+  // Lookup a single user profile by email
+  getByEmail: publicProcedure
+    .input(z.object({ email: z.string().email() }))
+    .query(async ({ ctx, input }) => {
+      const { data, error } = await ctx.supabase
+        .from("profiles")
+        .select("*")
+        .eq("email", input.email)
+        .maybeSingle();
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data; // may be null if not found
+    }),
+
   create: publicProcedure
     .input(
       z.object({

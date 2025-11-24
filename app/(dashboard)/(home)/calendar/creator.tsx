@@ -71,8 +71,6 @@ type Slot = { id: number; start: string; end: string };
 const EventCreator = ({ data, date, bookings }: any) => {
   const { isOpen, onOpen, onClose, onToggle } = useDisclosure();
 
-  console.log("bookings", bookings)
-
   const form = useForm<TEventFormData>({
     resolver: zodResolver(eventSchema),
     defaultValues: {

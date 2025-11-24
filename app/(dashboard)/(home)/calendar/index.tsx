@@ -138,6 +138,17 @@ const KarimjeeCalendar = () => {
     setBookings(mapped);
   }, [allBookings]);
 
+  const ResponsibleLabel = ({ facilityId }: { facilityId: number }) => {
+    const { data: persons } = api.facility.getResponsibles.useQuery();
+    const rp = persons?.find((p: any) => p?.facility?.id === facilityId);
+    if (!rp) return null;
+    return (
+      <span className="ml-2 inline-flex items-center gap-1">
+        • Responsible: {rp.name || rp.email || 'N/A'}
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex w-full justify-between">
@@ -281,48 +292,50 @@ const KarimjeeCalendar = () => {
         </MiniCalendar>
       </div>
 
-      <KanbanProvider
-        columns={
-          facilities?.map((f) => ({
-            id: f.id.toString(),
-            name: f.name,
-            color: f.color || "#6B7280",
-            data: f
-          })) || []
-        }
-        data={bookings}
-        onDataChange={setBookings}
-      >
-        {(column) => (
-          <KanbanBoard
-            id={column.id}
-            key={column.id}
-            className="overflow-x-scroll"
+          <KanbanProvider
+            columns={
+              facilities?.map((f) => ({
+                id: f.id.toString(),
+                name: f.name,
+                color: f.color || "#6B7280",
+                data: f
+              })) || []
+            }
+            data={bookings}
+            onDataChange={setBookings}
           >
-            <KanbanHeader>
-              <div className="flex flex-col ">
-                <div>
-                  { column.name }
-                </div>
-                <div>
-                  <div className="flex justify-between">
-                    <span className="text-xs flex justify-between w-full text-muted-foreground items-center"> 
-                      {column.data.building.name} - {column.data.building.location}
-                    </span>
-                    {/* Show creator only when user is logged in */}
-                    {status === "authenticated" && (
-                      <EventCreator 
-                        data={column.data}
-                        date={currentDate}
-                        bookings={bookedSlots.find((d: any) => d.facility === column.id)?.slots || []}
-                      />
-                    )}
+            {(column) => (
+              <KanbanBoard
+                id={column.id}
+                key={column.id}
+                className="overflow-x-scroll"
+              >
+                <KanbanHeader>
+                  <div className="flex flex-col ">
+                    <div>
+                      { column.name }
+                    </div>
+                    <div>
+                      <div className="flex justify-between">
+                        <span className="text-xs flex justify-between w-full text-muted-foreground items-center"> 
+                          {column.data.building.name} - {column.data.building.location}
+                          {/* Responsible person for this room */}
+                          {/* <ResponsibleLabel facilityId={column.data.id} /> */}
+                        </span>
+                        {/* Show creator only when user is logged in */}
+                        {status === "authenticated" && (
+                          <EventCreator 
+                            data={column.data}
+                            date={currentDate}
+                            bookings={bookedSlots.find((d: any) => d.facility === column.id)?.slots || []}
+                          />
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </KanbanHeader>
+                </KanbanHeader>
             {bookings.some((b: any) => b.column === column.id) ? (
-              <KanbanCards id={column.id} className="w-[200px]">
+              <KanbanCards id={column.id} className="w-full cursor-pointer">
                 {(feature: any) => (
                   <KanbanCard
                     draggable={false}
@@ -330,8 +343,11 @@ const KarimjeeCalendar = () => {
                     id={feature.id}
                     key={feature.id}
                     name={feature.name}
+                    className="cursor-pointer p-0"
                   >
-                    <EventItem event={feature} />
+                    <EventItem
+                       event={feature}
+                    />
                   </KanbanCard>
                 )}
               </KanbanCards>
