@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
 import { SignOutButton } from "@/app/auth/signin/signout";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { AddEventDialog } from "@/calendar/components/dialogs/add-event-dialog";
 import { Plus } from "lucide-react";
 // Simple logo component for the navbar
@@ -103,6 +104,7 @@ export const Navigation = React.forwardRef<HTMLElement, Navbar01Props>(
     },
     ref,
   ) => {
+    const { status } = useSession();
     const [isMobile, setIsMobile] = useState(false);
     const containerRef = useRef<HTMLElement>(null);
     useEffect(() => {
@@ -223,14 +225,35 @@ export const Navigation = React.forwardRef<HTMLElement, Navbar01Props>(
                   Create
                 </Button>
               </AddEventDialog> */}
-              <Link href="/create/guest">
-                <Button className="w-full sm:w-auto cursor-pointer">
-                  <Plus />
-                  Create
-                </Button>
-              </Link>
             </div>
-            <div>{/* <SignOutButton /> */}</div>
+            <div className="flex items-center gap-2">
+              {status === "authenticated" ? (
+                <Button
+                  variant="outline"
+                  className="w-full cursor-pointer sm:w-auto"
+                  onClick={() => signOut()}
+                >
+                  Sign out
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Link href="/create/guest">
+                    <Button className="w-full cursor-pointer sm:w-auto">
+                      <Plus />
+                      Create
+                    </Button>
+                  </Link>
+                  <Link href="/auth/signin">
+                    <Button
+                      variant="outline"
+                      className="w-full cursor-pointer sm:w-auto"
+                    >
+                      Sign in
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>

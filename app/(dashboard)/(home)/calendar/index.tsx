@@ -8,6 +8,7 @@ import {
   KanbanProvider,
 } from "@/src/components/ui/shadcn-io/kanban";
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { api } from "@/trpc/react";
 import _ from "lodash";
 import EventItem from "./eventItem";
@@ -41,9 +42,12 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
+import EventCreator from "./creator";
 
 const KarimjeeCalendar = () => {
+  const { status } = useSession();
   const [bookings, setBookings] = useState<any>([]);
+  const [bookedSlots, setBookedSlots] = useState<any>([]);
   // Use a simple controlled string state to match Combobox typing
   const [location, setLocation] = useState<string>("");
   const [locationOpen, setLocationOpen] = useState<boolean>(false);
@@ -98,26 +102,36 @@ const KarimjeeCalendar = () => {
 
   useEffect(() => {
     if (!allBookings || allBookings.length === 0) return;
+    const BookedSlots = _.map(allBookings, (b: any) => ({
+      facility: b.facility?.id || "",
+      slot: b.slot.id
+    }))
+    const disabledSlots = _.map(_.groupBy(BookedSlots, "facility"), (record, facility) => ({
+      facility,
+      slots: record.map((r: any) => r.slot)
+    }))
+    setBookedSlots(disabledSlots)
+
     const groupedBookings = _.groupBy(allBookings, "code");
     const mapped = _.map(groupedBookings, (record, code) => {
       const sorted = _.sortBy(record, "slot.start");
 
       const first = sorted[0];
       const last = sorted[sorted.length - 1];
-
       return {
         id: code,
         date: first.date,
-        name: first.description || "",
+        name: _.isEmpty(first.description.trim()) ? first.user?.email || "" : first.description,
         start: first.start,
         end: last.end,
         startSlot: first.slot.start,
         endSlot: last.slot.end,
         uid: code,
         column: first.facility?.id ? first.facility.id.toString() : "",
+        facility: first.facility,
         owner: first.user,
         status: first.status,
-        description: first?.user?.name || first?.description || "",
+        description: _.isEmpty(first.description.trim()) ? first.user?.email || "" : first.description,
         // resourceId: first.facility?.id ? first.facility.id.toString() : "",
       };
     });
@@ -273,6 +287,7 @@ const KarimjeeCalendar = () => {
             id: f.id.toString(),
             name: f.name,
             color: f.color || "#6B7280",
+            data: f
           })) || []
         }
         data={bookings}
@@ -285,9 +300,25 @@ const KarimjeeCalendar = () => {
             className="overflow-x-scroll"
           >
             <KanbanHeader>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full" />
-                <span>{column.name}</span>
+              <div className="flex flex-col ">
+                <div>
+                  { column.name }
+                </div>
+                <div>
+                  <div className="flex justify-between">
+                    <span className="text-xs flex justify-between w-full text-muted-foreground items-center"> 
+                      {column.data.building.name} - {column.data.building.location}
+                    </span>
+                    {/* Show creator only when user is logged in */}
+                    {status === "authenticated" && (
+                      <EventCreator 
+                        data={column.data}
+                        date={currentDate}
+                        bookings={bookedSlots.find((d: any) => d.facility === column.id)?.slots || []}
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
             </KanbanHeader>
             {bookings.some((b: any) => b.column === column.id) ? (

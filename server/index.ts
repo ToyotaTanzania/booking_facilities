@@ -134,7 +134,9 @@ export const protectedProcedure = t.procedure
     }
     return next({
       ctx: {
-        // infers the `session` as non-nullable
+        // Preserve existing context (e.g., supabase, client, admin, mailer)
+        // and only narrow the session to be non-nullable.
+        ...ctx,
         session: { ...ctx.session, user: ctx.session.user },
       },
     });

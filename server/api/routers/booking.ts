@@ -160,7 +160,7 @@ export const bookingRouter = createTRPCRouter({
 
       const code = uuidv4()
 
-      const ctxUser = ctx.session.supabase.user
+      const ctxUser = ctx.session.user
   
       const bookings = input.slots.map(slot => ({
         slot: slot,
@@ -173,7 +173,7 @@ export const bookingRouter = createTRPCRouter({
         code: code,
         name: ctxUser.name ?? "",
         email: ctxUser.email ?? "",
-        phone: ctxUser.user.phone ?? "",
+        phone: (ctxUser as any)?.phone ?? "",
         title: input.title,
         location: input.location,
         building: input.building,
@@ -539,17 +539,34 @@ export const bookingRouter = createTRPCRouter({
     .from('bookings')
     // .select('*, facility(*)')
     .select('*, slot:slots(*), facility:facilities(*, building(*)), user:profiles(*)')
-    .eq('date', date)
-    .or(`status.eq.confirmed,status.eq.pending`)
+    // Filter by exact date when provided; normalize ISO to yyyy-MM-dd
+    
     .order('created_at', { ascending: false })
 
-    if(!_.isEmpty(facility) || (_.isNumber(facility) && facility > 0)) {
-      query.eq('facility', facility)
+    // Apply status filter using IN for robustness
+    
+
+    if (date) {
+      const base = new Date(date);
+      const startDate = format(base, 'yyyy-MM-dd');
+      query.eq('date', startDate);
     }
-    if(!_.isEmpty(building) || (_.isNumber(building) && building > 0)) {
-      query.eq('building', building)
-    }else if(!_.isEmpty(location)){
-      query.ilike('location', `%${location}%`)
+
+    query.in('status', ['confirmed', 'pending']);
+
+    // Facility filter (coerce string ids to numbers)
+    if (facility !== null && facility !== undefined) {
+      const facilityId = typeof facility === 'number' ? facility : +facility;
+      if (!Number.isNaN(facilityId) && facilityId > 0) {
+        query.eq('facility', facilityId);
+      }
+    }
+
+    // Building and location filters should reference related columns via facility
+    if (typeof building === 'number' && building > 0) {
+      query.eq('facility.building', building);
+    } else if (location && !_.isEmpty(location)) {
+      query.eq('facility.building.location', location);
     }
 
     const { data, error } = await query
