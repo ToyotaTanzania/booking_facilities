@@ -34,6 +34,7 @@ import {
   MiniCalendarNavigation,
 } from "@/components/ui/mini-calendar";
 import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
 import { ArrowLeftIcon, ArrowRightIcon, Icon } from "lucide-react";
 import {
   Empty,
@@ -83,11 +84,11 @@ const KarimjeeCalendar = () => {
     enabled: debouncedLocation !== "",
   });
 
+  const effectiveDate = debouncedDate ? format(debouncedDate, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
   const { data: filteredBookings, isLoading: loadingFilteredBookings } =
     api.booking.searchBookings.useQuery({
-      // date: currentDate.toISOString(),
-      date: debouncedDate.toISOString() ?? new Date().toString(),
-      location: debouncedLocation ?? "",
+      date: effectiveDate,
+      location: debouncedLocation || "",
       facility: numeral(debouncedFacility).value() || undefined,
       building: numeral(debouncedBuilding).value() || undefined,
     });
@@ -101,8 +102,13 @@ const KarimjeeCalendar = () => {
   
 
   useEffect(() => {
-    if (!allBookings || allBookings.length === 0) return;
-    const BookedSlots = _.map(allBookings, (b: any) => ({
+    const source = (filteredBookings && !loadingFilteredBookings) ? filteredBookings : allBookings;
+    if (!source || source.length === 0) {
+      setBookedSlots([]);
+      setBookings([]);
+      return;
+    }
+    const BookedSlots = _.map(source, (b: any) => ({
       facility: b.facility?.id || "",
       slot: b.slot.id
     }))
@@ -112,7 +118,7 @@ const KarimjeeCalendar = () => {
     }))
     setBookedSlots(disabledSlots)
 
-    const groupedBookings = _.groupBy(allBookings, "code");
+    const groupedBookings = _.groupBy(source, "code");
     const mapped = _.map(groupedBookings, (record, code) => {
       const sorted = _.sortBy(record, "slot.start");
 
@@ -136,7 +142,7 @@ const KarimjeeCalendar = () => {
       };
     });
     setBookings(mapped);
-  }, [allBookings]);
+  }, [allBookings, filteredBookings, loadingFilteredBookings]);
 
   const ResponsibleLabel = ({ facilityId }: { facilityId: number }) => {
     const { data: persons } = api.facility.getResponsibles.useQuery();
