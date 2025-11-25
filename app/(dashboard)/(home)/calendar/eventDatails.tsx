@@ -514,7 +514,7 @@ const EventDetails = ({
 
             <SheetFooter>
                 
-              <div className="flex flex-wrap justify-end gap-2 mr-2">
+              <div className="flex flex-wrap flex-col space-y-4 justify-end gap-6 mr-2">
                 <Separator />
                 {isResponsible && (
                     <div>
@@ -528,7 +528,7 @@ const EventDetails = ({
                 </Button>
                 <Button
                   variant="secondary"
-                   className="w-full"
+                   className="w-full mt-4"
                   disabled={!resolvedBooking}
                   onClick={() => setRescheduleOpen(true)}
                 >
@@ -536,7 +536,7 @@ const EventDetails = ({
                 </Button>
                 <Button
                   disabled={!resolvedBooking}
-                    className="w-full"
+                    className="w-full mt-4"
                   onClick={() => {
                     const scheduleId = resolvedBooking?.schedule;
                     if (!resolvedBooking || typeof scheduleId !== "number") {
@@ -556,7 +556,7 @@ const EventDetails = ({
                 </Button>
                 <Button
                   variant="destructive"
-                  className="w-full"
+                  className="w-full mt-4"
                   disabled={!resolvedBooking}
                   onClick={() => setRejectOpen(true)}
                 >
@@ -566,7 +566,7 @@ const EventDetails = ({
               )}
               </div>
               
-              <SheetClose asChild>
+              <SheetClose asChild className="mt-3">
                 <Button type="button" variant="outline">Close</Button>
               </SheetClose>
             </SheetFooter>

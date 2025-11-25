@@ -124,14 +124,27 @@ const KarimjeeCalendar = () => {
 
       const first = sorted[0];
       const last = sorted[sorted.length - 1];
+
+      const normalizeTime = (t?: string) => {
+        const s = String(t || "").trim();
+        if (/^\d{2}:\d{2}$/.test(s)) return `${s}:00`;
+        if (/^\d{2}:\d{2}:\d{2}$/.test(s)) return s;
+        return "08:00:00"; // safe default
+      };
+
+      const dateStr = String(first?.date || effectiveDate);
+      const startIso = `${dateStr}T${normalizeTime(first?.slot?.start)}`;
+      const endIso = `${dateStr}T${normalizeTime(last?.slot?.end)}`;
+
       return {
         id: code,
         date: first.date,
         name: _.isEmpty(first.description.trim()) ? first.user?.email || "" : first.description,
-        start: first.start,
-        end: last.end,
-        startSlot: first.slot.start,
-        endSlot: last.slot.end,
+        start: startIso,
+        end: endIso,
+        // Keep slot identifiers as raw strings to match dayBookings comparisons
+        startSlot: first?.slot?.start,
+        endSlot: last?.slot?.end,
         uid: code,
         column: first.facility?.id ? first.facility.id.toString() : "",
         facility: first.facility,
