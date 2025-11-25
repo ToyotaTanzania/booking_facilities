@@ -232,7 +232,7 @@ export const Navigation = React.forwardRef<HTMLElement, Navbar01Props>(
               {status === "authenticated" ? (
                 <div className="flex items-center gap-2">
                   {isAdmin && (
-                    <Link href="/dashboard">
+                    <Link href="/locations">
                       <Button className="w-full cursor-pointer sm:w-auto">
                         Manage
                       </Button>
