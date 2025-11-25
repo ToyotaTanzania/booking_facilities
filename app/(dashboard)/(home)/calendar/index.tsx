@@ -151,21 +151,21 @@ const KarimjeeCalendar = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex w-full justify-between">
+      <div className="w-full">
         <MiniCalendar
           days={5}
           value={currentDate}
           onValueChange={(date) => setCurrentDate(date || new Date())}
-          className="w-full"
+          className="w-full flex-col sm:flex-row sm:flex-wrap items-stretch gap-2"
         >
           {/* <MiniCalendarNavigation direction="prev" /> */}
           {/* <MiniCalendarNavigation asChild direction="today"> */}
-          <Button variant="outline" onClick={() => setCurrentDate(new Date())}>
+          <Button variant="outline" className="shrink-0 w-full sm:w-auto" onClick={() => setCurrentDate(new Date())}>
             Today
           </Button>
           {/* </MiniCalendarNavigation> */}
           <MiniCalendarNavigation asChild direction="prev">
-            <Button size="icon" variant="outline">
+            <Button size="icon" variant="outline" className="shrink-0">
               <ArrowLeftIcon className="size-4" />
             </Button>
           </MiniCalendarNavigation>
@@ -182,7 +182,7 @@ const KarimjeeCalendar = () => {
 
           {/* <MiniCalendarNavigation direction="next" /> */}
           <MiniCalendarNavigation asChild direction="next">
-            <Button size="icon" variant="outline">
+            <Button size="icon" variant="outline" className="shrink-0">
               <ArrowRightIcon className="size-4" />
             </Button>
           </MiniCalendarNavigation>
@@ -198,14 +198,14 @@ const KarimjeeCalendar = () => {
             value={location}
             onValueChange={setLocation}
           >
-            <ComboboxTrigger className="w-[200px]" />
-            <ComboboxContent className="w-[200px]">
+            <ComboboxTrigger className="w-full sm:w-[200px]" />
+            <ComboboxContent className="w-full sm:w-[200px]">
               <ComboboxInput />
               <ComboboxEmpty />
               <ComboboxList>
-                <ComboboxGroup className="w-[200px]">
+                <ComboboxGroup className="w-full sm:w-[200px]">
                   {allLocations?.map((location) => (
-                    <ComboboxItem className="w-[200px]" key={location.name} value={location.name}>
+                    <ComboboxItem className="w-full sm:w-[200px]" key={location.name} value={location.name}>
                       {location.name}
                     </ComboboxItem>
                   ))}
@@ -226,8 +226,8 @@ const KarimjeeCalendar = () => {
             value={building ? building.toString() : ""}
             onValueChange={(val) => setBuilding(Number(val) || 0)}
           >
-            <ComboboxTrigger className="w-[200px]" />
-            <ComboboxContent className="w-[200px]">
+            <ComboboxTrigger className="w-full sm:w-[200px]" />
+            <ComboboxContent className="w-full sm:w-[200px]">
               <ComboboxInput  />
               <ComboboxEmpty>
                 {
@@ -238,9 +238,9 @@ const KarimjeeCalendar = () => {
                 }
               </ComboboxEmpty>
               <ComboboxList>
-                <ComboboxGroup className="w-[200px]">
+                <ComboboxGroup className="w-full sm:w-[200px]">
                   {allBuildings?.map((building) => (  
-                    <ComboboxItem className="w-[200px]" key={building.id.toString()} value={building.id.toString()}>
+                    <ComboboxItem className="w-full sm:w-[200px]" key={building.id.toString()} value={building.id.toString()}>
                       {building.name}
                     </ComboboxItem>
                   ))}
@@ -261,14 +261,14 @@ const KarimjeeCalendar = () => {
             value={facility}
             onValueChange={setFacility}
           >
-            <ComboboxTrigger className="w-[200px]" />
-            <ComboboxContent className="w-[200px]">
+            <ComboboxTrigger className="w-full sm:w-[200px]" />
+            <ComboboxContent className="w-full sm:w-[200px]">
               <ComboboxInput />
               <ComboboxEmpty />
               <ComboboxList>
-                <ComboboxGroup className="w-[200px]">
+                <ComboboxGroup className="w-full sm:w-[200px]">
                   {facilities?.map((facility) => (   
-                    <ComboboxItem className="w-[200px]" key={facility.id.toString()} value={facility.id.toString()}>
+                    <ComboboxItem className="w-full sm:w-[200px]" key={facility.id.toString()} value={facility.id.toString()}>
                       {facility.name}
                     </ComboboxItem>
                   ))}
@@ -284,6 +284,7 @@ const KarimjeeCalendar = () => {
               setFacility("");
               setCurrentDate(new Date());
             }}
+            className="shrink-0 w-full sm:w-auto"
           >
             Clear Filters
           </Button>
@@ -292,7 +293,9 @@ const KarimjeeCalendar = () => {
         </MiniCalendar>
       </div>
 
+      {/* Kanban columns: horizontal grid with min column width and scroll */}
           <KanbanProvider
+            className="overflow-x-auto grid-flow-col auto-cols-[minmax(280px,1fr)]"
             columns={
               facilities?.map((f) => ({
                 id: f.id.toString(),
@@ -308,7 +311,7 @@ const KarimjeeCalendar = () => {
               <KanbanBoard
                 id={column.id}
                 key={column.id}
-                className="overflow-x-scroll"
+                className="snap-start"
               >
                 <KanbanHeader>
                   <div className="flex flex-col ">

@@ -104,7 +104,9 @@ export const Navigation = React.forwardRef<HTMLElement, Navbar01Props>(
     },
     ref,
   ) => {
-    const { status } = useSession();
+    const { status, data: session } = useSession();
+    const userRole = (session as any)?.supabase?.role as string | undefined;
+    const isAdmin = userRole === "admin" || userRole === "administrator";
     const [isMobile, setIsMobile] = useState(false);
     const containerRef = useRef<HTMLElement>(null);
     useEffect(() => {
@@ -228,13 +230,22 @@ export const Navigation = React.forwardRef<HTMLElement, Navbar01Props>(
             </div>
             <div className="flex items-center gap-2">
               {status === "authenticated" ? (
-                <Button
-                  variant="outline"
-                  className="w-full cursor-pointer sm:w-auto"
-                  onClick={() => signOut()}
-                >
-                  Sign out
-                </Button>
+                <div className="flex items-center gap-2">
+                  {isAdmin && (
+                    <Link href="/dashboard">
+                      <Button className="w-full cursor-pointer sm:w-auto">
+                        Manage
+                      </Button>
+                    </Link>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full cursor-pointer sm:w-auto"
+                    onClick={() => signOut()}
+                  >
+                    Sign out
+                  </Button>
+                </div>
               ) : (
                 <div className="flex gap-2">
                   <Link href="/create/guest">
